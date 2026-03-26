@@ -1,9 +1,12 @@
 {
   "skill_name": "fengye-blog-style",
   "status": "complete",
-  "current_experiment": 3,
-  "baseline_score": 80.0,
+  "current_experiment": 7,
+  "baseline_score": 70.0,
   "best_score": 100.0,
+  "round": 2,
+  "round2_evals": "E1-E8 (expanded from E1-E5)",
+  "round2_max_score": 40,
   "experiments": [
     {
       "id": 0,
@@ -11,7 +14,7 @@
       "max_score": 25,
       "pass_rate": 80.0,
       "status": "baseline",
-      "description": "original skill — no changes"
+      "description": "R1: original skill — no changes"
     },
     {
       "id": 1,
@@ -19,7 +22,7 @@
       "max_score": 25,
       "pass_rate": 100.0,
       "status": "keep",
-      "description": "strengthened anti-pattern section: hard prohibitions + examples + hedge words ban"
+      "description": "R1: strengthened anti-pattern section"
     },
     {
       "id": 2,
@@ -27,7 +30,7 @@
       "max_score": 25,
       "pass_rate": 100.0,
       "status": "keep",
-      "description": "verification — no mutation"
+      "description": "R1: verification — no mutation"
     },
     {
       "id": 3,
@@ -35,14 +38,49 @@
       "max_score": 25,
       "pass_rate": 100.0,
       "status": "keep",
-      "description": "final verification — stop condition met (3 consecutive 95%+)"
+      "description": "R1: final verification — stop condition met"
+    },
+    {
+      "id": 4,
+      "score": 28,
+      "max_score": 40,
+      "pass_rate": 70.0,
+      "status": "baseline-r2",
+      "description": "R2 baseline: expanded evals E1-E8. E6=0/5, E7=3/5, E8=0/5"
+    },
+    {
+      "id": 5,
+      "score": 40,
+      "max_score": 40,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "R2: first-person voice + real-scenario openings + AI transition ban"
+    },
+    {
+      "id": 6,
+      "score": 40,
+      "max_score": 40,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "R2: verification — no mutation, consecutive 2/3"
+    },
+    {
+      "id": 7,
+      "score": 40,
+      "max_score": 40,
+      "pass_rate": 100.0,
+      "status": "keep",
+      "description": "R2: final verification — stop condition met (3 consecutive 95%+)"
     }
   ],
   "eval_breakdown": [
-    {"name": "E1-开头无套话", "pass_count": 20, "total": 20},
-    {"name": "E2-无反模式", "pass_count": 18, "total": 20},
-    {"name": "E3-语气硬无模糊词", "pass_count": 18, "total": 20},
-    {"name": "E4-具体工程名词", "pass_count": 20, "total": 20},
-    {"name": "E5-无重复解释", "pass_count": 20, "total": 20}
+    {"name": "E1-开头无套话", "pass_count": 25, "total": 25},
+    {"name": "E2-无反模式", "pass_count": 23, "total": 25},
+    {"name": "E3-语气硬无模糊词", "pass_count": 23, "total": 25},
+    {"name": "E4-具体工程名词", "pass_count": 25, "total": 25},
+    {"name": "E5-无重复解释", "pass_count": 25, "total": 25},
+    {"name": "E6-真实场景开头", "pass_count": 5, "total": 10},
+    {"name": "E7-无AI过渡句", "pass_count": 8, "total": 10},
+    {"name": "E8-有第一人称工程叙事", "pass_count": 5, "total": 10}
   ]
 }

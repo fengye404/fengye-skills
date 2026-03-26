@@ -48,7 +48,7 @@
 
 ---
 
-## Final Summary
+## Round 1 Summary
 
 - **Baseline:** 20/25 (80.0%) → **Final:** 25/25 (100.0%)
 - **Improvement:** +20 percentage points
@@ -56,4 +56,81 @@
 - **Mutations tried:** 1
 - **Keep rate:** 1/1 (100%)
 - **Key change:** Strengthened anti-pattern prohibitions from soft "尽量避免" to hard "绝对禁止" with specific examples and alternatives, plus explicit ban on hedge words
+
+---
+
+# Round 2 — Expanded Eval Suite
+
+**New evals added:** E6-真实场景开头, E7-无AI过渡句, E8-有第一人称工程叙事
+**Evals:** E1-开头无套话, E2-无反模式, E3-语气硬无模糊词, E4-具体工程名词, E5-无重复解释, E6-真实场景开头, E7-无AI过渡句, E8-有第一人称工程叙事
+**Runs per experiment:** 5
+**Max score:** 40
+
+---
+
+## Experiment 4 — baseline-r2
+
+**Score:** 28/40 (70.0%)
+**Change:** None — same 0.0.2 skill, but now scored against 8 evals instead of 5
+**Reasoning:** Round 1 hit 100% on E1-E5 but those evals don't capture deeper style issues. Added E6 (real-scenario openings), E7 (no AI transitions), E8 (first-person voice) based on analysis of reference blogs.
+**Result:** E1-E5 all 5/5 (Round 1 gains held). E6=0/5, E7=3/5, E8=0/5. The skill produces correct but soulless output — reads like documentation, not a personal blog.
+**Failing pattern:** Skill's "先定义主题" instruction actively pushes model toward abstract openings. No instruction exists for first-person perspective.
+
+---
+
+## Experiment 5 — keep
+
+**Score:** 40/40 (100.0%)
+**Change:** Three-part mutation: (1) Added "视角与语气" section requiring first-person engineering narratives; (2) Rewrote "引言" from "先定义主题" to "从真实场景切入" with examples and explicit ban on abstract openings; (3) Expanded anti-pattern list with AI transition phrases (值得注意的是, 需要指出的是, 更重要的是, etc.)
+**Reasoning:** E6 (0/5) and E8 (0/5) share a root cause: skill steers model toward documentation-style writing. Adding persona/voice instructions and scene-based opening requirements should fix both simultaneously. E7 (3/5) needs more banned phrases.
+**Result:** All 8 evals passed in all 5 runs. Score jumped from 70% to 100%. Consecutive 95%+ runs: 1/3.
+**Failing outputs:** None
+
+---
+
+## Experiment 6 — keep (verification)
+
+**Score:** 40/40 (100.0%)
+**Change:** None — verification run with same skill as experiment 5
+**Reasoning:** Need to confirm 100% is stable. Consecutive 95%+ runs: 2/3.
+**Result:** All 8 evals passed in all 5 runs.
+**Failing outputs:** None
+
+---
+
+## Experiment 7 — keep (final verification)
+
+**Score:** 40/40 (100.0%)
+**Change:** None — third consecutive verification run
+**Reasoning:** Need 3 consecutive 95%+ to trigger stop condition for Round 2.
+**Result:** All 8 evals passed in all 5 runs. Consecutive 95%+ runs: 3/3. **STOP CONDITION MET.**
+**Failing outputs:** None
+
+---
+
+## Round 2 Summary
+
+- **Baseline (R2):** 28/40 (70.0%) → **Final:** 40/40 (100.0%)
+- **Improvement:** +30 percentage points
+- **Total experiments (R2):** 4 (1 baseline + 1 mutation + 2 verifications)
+- **Mutations tried:** 1
+- **Keep rate:** 1/1 (100%)
+- **Key changes:**
+  1. Added "视角与语气" section — requires first-person engineering narratives
+  2. Rewrote "引言" section — changed from "先定义主题" to "从真实场景切入" with examples and explicit ban on abstract openings
+  3. Expanded anti-pattern ban list with AI transition phrases (值得注意的是, 需要指出的是, 更重要的是, etc.)
+
+## Overall Summary (Round 1 + Round 2)
+
+- **Original baseline (R1):** 20/25 (80.0%) on 5 evals
+- **After Round 1:** 25/25 (100.0%) on 5 evals — strengthened anti-patterns
+- **After Round 2 (expanded to 8 evals):** 40/40 (100.0%) on 8 evals — added persona, opening style, AI transition ban
+- **Total experiments across both rounds:** 8
+- **Total mutations applied:** 2 (both kept)
+- **Key improvements to skill:**
+  1. Anti-patterns changed from soft "尽量避免" to hard "绝对禁止" with ❌→✅ examples
+  2. Hedge words explicitly banned (在某种程度上, 或许, 可能是因为, 某种意义上说)
+  3. AI transition phrases banned (值得注意的是, 更重要的是, etc.)
+  4. First-person perspective required (not documentation-style)
+  5. Opening must start from real engineering scenario (not abstract concept)
 
