@@ -134,3 +134,45 @@
   4. First-person perspective required (not documentation-style)
   5. Opening must start from real engineering scenario (not abstract concept)
 
+---
+
+# Round 3 — Rhythm & Structure (Evals: E1,E2,E6,E8,E9,E10,E11 | Max: 35)
+
+## Experiment 8 — baseline-r3: 29/35 (82.9%)
+## Experiment 9 — keep: 35/35 (100%) — Added 句子节奏 + 段落结构 + AI高频词 ban
+
+# Round 4 — Deeper Anti-AI Evals (Added E12,E13,E14 | Max: 50)
+
+## Experiment 10 — keep: 50/50 (100%) — All new evals passed without mutation
+
+# Round 5 — Casual Voice (Evals rotated: E15,E16 replace E9,E10,E11 | Max: 45)
+
+## Experiment 11 — baseline: 37/45 (82.2%)
+## Experiment 12 — keep: 45/45 (100%) — Added 口语化语气 section (连接词+口语+对比表)
+
+# Round 6 — Anti-Parallel Enumeration (Evals: E18,E19,E20 replace E12,E13,E14 | Max: 45)
+
+## Experiment 13 — baseline: 43/45 (95.6%)
+## Experiment 14 — keep: 45/45 (100%) — Added 禁止平行枚举 section
+
+# Round 7 — Ending Variety & Personal Asides (Evals: E21,E22,E23 replace E1,E2,E6 | Max: 45)
+
+## Experiment 15 — baseline: 43/45 (95.6%)
+## Experiment 16 — keep: 41/45 (91.1%) — Rewrote 结论 + added 个人闲话. E15 regressed.
+
+# Round 8 — E15 Self-Check Fix
+
+## Experiment 17 — keep: 42/45 (93.3%) — Strengthened 随意连接词 self-check. E15 recovered 5/5.
+
+# Round 9 — E18/E21 Strengthen
+
+## Experiment 18 — keep: 45/45 (100%) — Hardened 禁止平行枚举 + 个人闲话 to 硬性要求.
+
+# Round 10 — Final Comprehensive Stress Test (Full 12-eval suite | Max: 60)
+
+## Experiment 19 — keep: 59/60 (98.3%) — Added 自检清单. Only 1/60 failure (E15 in Deno article).
+
+---
+
+# Grand Summary: 10 Rounds, 20 Experiments, 10 Mutations → 98.3% on 12-eval comprehensive test
+
