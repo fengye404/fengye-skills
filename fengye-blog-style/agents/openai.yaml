@@ -1,0 +1,7 @@
+interface:
+  display_name: "Fengye 博客文风"
+  short_description: "按 Fengye 的文风写更清楚、更硬一点的中文技术博客"
+  default_prompt: "使用 $fengye-blog-style 重写这篇中文技术博客，让它更贴近我在 https://fengye404.top/ 的写作风格。"
+
+policy:
+  allow_implicit_invocation: true
