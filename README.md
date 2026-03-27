@@ -1,6 +1,6 @@
 # fengye-skills
 
-存放个人 Copilot Agent Skills 的仓库。
+存放个人 Skills 的仓库。
 
 每个 skill 按版本管理，目录结构如下：
 
