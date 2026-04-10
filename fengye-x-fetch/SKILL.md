@@ -79,11 +79,19 @@ python <skill-path>/scripts/fetch_tweet.py "https://x.com/user/status/1234567890
 
 Returns structured JSON with fields: `id`, `text`, `author`, `created_at`, `media`, `quoted_tweet`, `like_count`, etc.
 
-### Download media
+### Download media (images/video/audio)
+
+Download all media (images, videos, audio) to a local directory. URLs in the Markdown output are automatically replaced with local paths.
 
 ```bash
 python <skill-path>/scripts/fetch_tweet.py "https://x.com/user/status/1234567890" --download-media ./assets
 ```
+
+**Behavior:**
+- Downloads all `![](url)` images, `[Video](url)` links with media extensions, and HTML media tags
+- Filenames: `{basename}-{hash8}.{ext}` (deterministic, dedup-safe)
+- Failed downloads keep their original URL
+- Works with `--thread` and `--full-article` flags
 
 ### Debug: Raw API response
 
@@ -106,7 +114,7 @@ When using this skill to save a tweet as part of a bookmark workflow:
    python <skill-path>/scripts/fetch_tweet.py "<url>" --json --full-article
    ```
 
-3. **If you need to download images locally:**
+3. **If you need to download media locally (with URL replacement):**
    ```bash
    python <skill-path>/scripts/fetch_tweet.py "<url>" --download-media /path/to/assets --full-article
    ```

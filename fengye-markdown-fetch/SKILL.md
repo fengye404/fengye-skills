@@ -93,6 +93,25 @@ Returns:
 python <skill-path>/scripts/fetch_markdown.py "https://slow-site.com/page" --timeout 60
 ```
 
+### Download media (images/video/audio)
+
+Download all media referenced in the article to a local directory. URLs in the Markdown output are automatically replaced with local paths.
+
+```bash
+python <skill-path>/scripts/fetch_markdown.py "https://example.com/article" --download-media ./assets
+```
+
+Combine with other flags:
+```bash
+python <skill-path>/scripts/fetch_markdown.py "https://example.com/article" --download-media ./assets --json
+```
+
+**Behavior:**
+- Downloads images (`![](url)`), videos, audio from `<img>`, `<video>`, `<audio>`, `<source>` tags
+- Filenames: `{basename}-{hash8}.{ext}` (deterministic, dedup-safe)
+- Failed downloads keep their original URL
+- Skips non-media responses (HTML error pages)
+
 ## URL Routing Guide
 
 | URL Pattern | Recommended Tool |

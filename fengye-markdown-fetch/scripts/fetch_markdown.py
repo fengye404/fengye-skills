@@ -17,10 +17,14 @@ Examples:
 """
 
 import argparse
+import hashlib
 import json
+import os
 import re
 import sys
 import time
+import urllib.parse
+from pathlib import Path
 from typing import Optional
 
 try:
@@ -201,6 +205,108 @@ PROVIDERS = {
 PROVIDER_ORDER = ["jina", "defuddle", "raw"]
 
 
+# ── Media Download ─────────────────────────────────────────────────────────────
+
+# Patterns to match media URLs in Markdown
+_MD_IMAGE_RE = re.compile(r'(!\[[^\]]*\])\((\s*https?://[^)]+)\)')
+_HTML_MEDIA_RE = re.compile(
+    r'(<(?:img|video|audio|source)\b[^>]*?\b(?:src|poster)=["\'])(https?://[^"\']+)(["\'])',
+    re.IGNORECASE,
+)
+
+# Extensions considered as media
+_MEDIA_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp", ".ico", ".avif",
+    ".mp4", ".webm", ".mov", ".avi", ".mkv",
+    ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a",
+}
+
+
+def _url_to_filename(url: str) -> str:
+    """Generate a deterministic filename from URL: basename-hash8.ext"""
+    parsed = urllib.parse.urlparse(url)
+    path_part = Path(parsed.path)
+
+    # Get extension
+    ext = path_part.suffix.lower()
+    ext = re.sub(r"\?.*", "", ext)  # strip query leak
+    if ext not in _MEDIA_EXTENSIONS or len(ext) > 6:
+        ext = ".jpg"  # safe default
+
+    # Get basename (without extension)
+    stem = path_part.stem or "media"
+    stem = re.sub(r"[^\w\-]", "-", stem)[:60]  # sanitize, truncate
+
+    # 8-char hash for uniqueness
+    url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+    return f"{stem}-{url_hash}{ext}"
+
+
+def download_media_in_markdown(markdown: str, output_dir: str) -> str:
+    """Download all media referenced in markdown, replace URLs with local paths.
+
+    Handles:
+      - Markdown images: ![alt](https://...)
+      - HTML media tags: <img src="...">, <video src="...">, <audio src="...">, <source src="...">
+
+    Returns the markdown with URLs replaced by local relative paths.
+    Failed downloads keep their original URL.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    downloaded = {}  # url -> local_filename (cache for dedup)
+    count = 0
+
+    def _download(url: str) -> Optional[str]:
+        """Download a single URL, return local filename or None on failure."""
+        nonlocal count
+        url = url.strip()
+        if url in downloaded:
+            return downloaded[url]
+
+        filename = _url_to_filename(url)
+        local_path = os.path.join(output_dir, filename)
+
+        try:
+            resp = requests.get(url, timeout=30, headers={"User-Agent": UA})
+            resp.raise_for_status()
+            content_type = resp.headers.get("content-type", "")
+            # Skip non-media responses (HTML error pages etc.)
+            if "text/html" in content_type and not url.endswith(".svg"):
+                print(f"  Skipped (HTML response): {url}", file=sys.stderr)
+                downloaded[url] = None
+                return None
+            with open(local_path, "wb") as f:
+                f.write(resp.content)
+            count += 1
+            print(f"  Downloaded: {filename}", file=sys.stderr)
+            downloaded[url] = filename
+            return filename
+        except Exception as e:
+            print(f"  Failed: {url} ({e})", file=sys.stderr)
+            downloaded[url] = None
+            return None
+
+    def _replace_md(m):
+        prefix, url = m.group(1), m.group(2).strip()
+        filename = _download(url)
+        if filename:
+            return f"{prefix}({output_dir}/{filename})"
+        return m.group(0)
+
+    def _replace_html(m):
+        prefix, url, suffix = m.group(1), m.group(2), m.group(3)
+        filename = _download(url)
+        if filename:
+            return f"{prefix}{output_dir}/{filename}{suffix}"
+        return m.group(0)
+
+    result = _MD_IMAGE_RE.sub(_replace_md, markdown)
+    result = _HTML_MEDIA_RE.sub(_replace_html, result)
+
+    print(f"  Media: {count} downloaded, {sum(1 for v in downloaded.values() if v is None)} failed/skipped", file=sys.stderr)
+    return result
+
+
 def fetch_auto(url: str, timeout: int = 30) -> dict:
     """Try providers in order, return the first successful result.
 
@@ -256,6 +362,10 @@ def main():
         "--timeout", type=int, default=30,
         help="Request timeout in seconds (default: 30)"
     )
+    parser.add_argument(
+        "--download-media", metavar="DIR",
+        help="Download all media (images/video/audio) to DIR, replace URLs with local paths"
+    )
 
     args = parser.parse_args()
 
@@ -269,8 +379,14 @@ def main():
             sys.exit(1)
 
     if args.json:
+        if args.download_media:
+            result["content"] = download_media_in_markdown(result["content"], args.download_media)
+            result["content_length"] = len(result["content"])
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
+        content = result["content"]
+        if args.download_media:
+            content = download_media_in_markdown(content, args.download_media)
         # Output markdown with title header if available
         if result["title"]:
             print(f"# {result['title']}\n")
@@ -279,7 +395,7 @@ def main():
             print()
             print("---")
             print()
-        print(result["content"])
+        print(content)
 
 
 if __name__ == "__main__":
