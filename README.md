@@ -34,14 +34,19 @@
 
 ### 首次安装
 
-克隆仓库后，运行安装脚本建立软链接：
+克隆仓库后，初始化 git-sync 并安装软链接：
 
 ```bash
 cd fengye-skills
+
+# 1. 配置 git-sync（每台机器只需执行一次）
+git config --bool branch.main.sync true
+git config --bool branch.main.syncNewFiles true
+git config branch.main.syncCommitMsg "auto-sync from $(scutil --get ComputerName 2>/dev/null || hostname)"
+
+# 2. 安装软链接到所有 AI 工具
 ./install.sh
 ```
-
-这会将所有 skills 通过软链接同步到所有支持的 AI 工具。
 
 ### 安装到指定工具
 
@@ -96,16 +101,10 @@ cd fengye-skills
 
 2. 编写 skill 内容（参考现有 skill 的结构）
 
-3. 同步到所有 AI 工具：
+3. 安装并同步：
    ```bash
    ./install.sh
-   ```
-
-4. 提交到 Git：
-   ```bash
-   git add .
-   git commit -m "feat: 添加 my-skill"
-   git push
+   ./git-sync
    ```
 
 ## 🔄 同步机制
@@ -146,11 +145,9 @@ cd fengye-skills
 
 1. 直接在本仓库中编辑 skill 文件
 2. 测试更改（因为软链接的存在，各 AI 工具会立即生效）
-3. 提交更改：
+3. 同步到 GitHub：
    ```bash
-   git add .
-   git commit -m "update(xxx): 修改描述"
-   git push
+   ./git-sync
    ```
 
 ### 删除 skill
@@ -160,16 +157,10 @@ cd fengye-skills
    rm -rf skill-name
    ```
 
-2. 重新运行 install.sh 清理各工具中的软链接：
+2. 重新安装并同步：
    ```bash
    ./install.sh
-   ```
-
-3. 提交更改：
-   ```bash
-   git add .
-   git commit -m "remove(xxx): 删除 skill-name"
-   git push
+   ./git-sync
    ```
 
 ## 📋 目录结构
@@ -178,6 +169,8 @@ cd fengye-skills
 fengye-skills/
 ├── README.md              # 本文件
 ├── install.sh             # 软链接管理脚本
+├── git-sync               # Git 自动同步脚本（commit + pull + push）
+├── AGENTS.md              # Agent 工作规范
 ├── agent-browser/         # 浏览器自动化
 ├── autoresearch/          # Skill 自动优化
 ├── copywriting/           # 文案撰写
