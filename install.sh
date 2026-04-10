@@ -202,6 +202,60 @@ list_skills() {
   echo -e "\n共 $(get_skills | wc -l) 个 skills"
 }
 
+# 生成 skills-lock.json
+generate_lock() {
+  local lock_file="$REPO_DIR/skills-lock.json"
+  local tmp_file="$lock_file.tmp"
+  local first=true
+
+  echo '{' > "$tmp_file"
+  echo '  "version": 1,' >> "$tmp_file"
+  echo '  "skills": {' >> "$tmp_file"
+
+  for skill in $(get_skills | sort); do
+    local skill_dir="$REPO_DIR/$skill"
+
+    # 计算 skill 目录的内容哈希（排除 .DS_Store 和缓存文件）
+    local hash=$(find "$skill_dir" -type f \
+      ! -name '.DS_Store' \
+      ! -name '.query_id_cache.json' \
+      -exec shasum -a 256 {} \; | sort | shasum -a 256 | cut -d' ' -f1)
+
+    # 统计文件数
+    local file_count=$(find "$skill_dir" -type f \
+      ! -name '.DS_Store' \
+      ! -name '.query_id_cache.json' | wc -l | tr -d ' ')
+
+    # 提取描述
+    local desc=""
+    if [ -f "$skill_dir/SKILL.md" ]; then
+      desc=$(grep -m1 '^description:' "$skill_dir/SKILL.md" 2>/dev/null | sed 's/^description: *//;s/^"//;s/"$//' | head -1)
+    fi
+
+    if [ "$first" = true ]; then
+      first=false
+    else
+      echo ',' >> "$tmp_file"
+    fi
+
+    # 转义 JSON 字符串中的特殊字符
+    desc=$(echo "$desc" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+    printf '    "%s": {\n' "$skill" >> "$tmp_file"
+    printf '      "hash": "%s",\n' "$hash" >> "$tmp_file"
+    printf '      "files": %s,\n' "$file_count" >> "$tmp_file"
+    printf '      "description": "%s"\n' "$desc" >> "$tmp_file"
+    printf '    }' >> "$tmp_file"
+  done
+
+  echo '' >> "$tmp_file"
+  echo '  }' >> "$tmp_file"
+  echo '}' >> "$tmp_file"
+
+  mv "$tmp_file" "$lock_file"
+  echo -e "\n${GREEN}✓${NC} skills-lock.json 已更新"
+}
+
 # 主逻辑
 main() {
   local command="${1:-all}"
@@ -218,6 +272,7 @@ main() {
       install_codex
       install_openclaw
       install_opencode
+      generate_lock
       echo -e "\n${GREEN}✓ 所有 skills 已同步到各 AI 工具${NC}"
       ;;
     claude)      install_claude ;;

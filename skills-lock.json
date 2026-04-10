@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-browser": {
+      "hash": "d119afb7838654b0f058d84ed96e38c7c8fb140772a4bd4ffbd856ecf5293b37",
+      "files": 11,
+      "description": "Browser automation CLI for AI agents. Use when the user needs to interact with websites, including navigating pages, filling forms, clicking buttons, taking screenshots, extracting data, testing web apps, or automating any browser task. Triggers include requests to \"open a website\", \"fill out a form\", \"click a button\", \"take a screenshot\", \"scrape data from a page\", \"test this web app\", \"login to a site\", \"automate browser actions\", or any task requiring programmatic web interaction."
+    },
+    "autoresearch": {
+      "hash": "6073f7a98ad9586acf3120ff6147129f1f70d6edc8a73f8708bfc4a901b15dc2",
+      "files": 2,
+      "description": "Autonomously optimize any Claude Code skill by running it repeatedly, scoring outputs against binary evals, mutating the prompt, and keeping improvements. Based on Karpathy's autoresearch methodology. Use when: optimize this skill, improve this skill, run autoresearch on, make this skill better, self-improve skill, benchmark skill, eval my skill, run evals on. Outputs: an improved SKILL.md, a results log, and a changelog of every mutation tried."
+    },
+    "copywriting": {
+      "hash": "fcf47bbfaca3d0c5106ae41ae03d0656c5504104957ad3d74b3818dcc3656986",
+      "files": 4,
+      "description": "When the user wants to write, rewrite, or improve marketing copy for any page — including homepage, landing pages, pricing pages, feature pages, about pages, or product pages. Also use when the user says \"write copy for,\" \"improve this copy,\" \"rewrite this page,\" \"marketing copy,\" \"headline help,\" \"CTA copy,\" \"value proposition,\" \"tagline,\" \"subheadline,\" \"hero section copy,\" \"above the fold,\" \"this copy is weak,\" \"make this more compelling,\" or \"help me describe my product.\" Use this whenever someone is working on website text that needs to persuade or convert. For email copy, see email-sequence. For popup copy, see popup-cro. For editing existing copy, see copy-editing."
+    },
+    "create-readme": {
+      "hash": "2112d61db21a966265abb5a0856bed62bfa2336a13854a43165d5859d926f7c9",
+      "files": 1,
+      "description": "'Create a README.md file for the project'"
+    },
+    "fengye-blog-style": {
+      "hash": "c2fc4a8bbc547d99134ea36cfd8adab498fda030c746baf85bbfc760b4818ee4",
+      "files": 29,
+      "description": ""
+    },
+    "fengye-markdown-fetch": {
+      "hash": "b51ecfdc79799d3e4024b209b23c250d9c0fb0b68a5068c1136b8ff6be092004",
+      "files": 3,
+      "description": "Fetch any web page and convert to clean Markdown. Supports multiple providers with automatic fallback: Jina Reader (r.jina.ai), Defuddle (defuddle.md), and raw HTML conversion. Use for saving articles, blog posts, documentation, or any web content."
+    },
+    "fengye-x-fetch": {
+      "hash": "832217b6918355dcb5667ad85e46ec2e27af6d774937ea4810788d4373334772",
+      "files": 3,
+      "description": "Fetch X/Twitter post content including tweets, threads, and long-form articles. Converts to clean Markdown with metadata, media, and quoted tweets. Supports auth_token authentication via X's internal GraphQL API (inspired by RSSHub)."
+    },
+    "find-skills": {
+      "hash": "af4f25b041808c370cbe79c432f157675ce9de8ed4eaa33f08dbc06607059932",
+      "files": 1,
+      "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill."
+    },
+    "frontend-design": {
+      "hash": "473630401cadbfd50ea51e96d3d31b076ee9cc923437a3447c47a960a0c5b840",
+      "files": 2,
+      "description": "Frontend design skill that generates, restyles, and guides UI development in mager's signature aesthetic — hot, sleek, sexy, usable, fun, and addictive interfaces with dark-first themes, terminal-inspired typography, neon accents, and visual discovery patterns. Use this skill when building or reviewing any frontend UI."
+    },
+    "macos-design-guidelines": {
+      "hash": "fe7ce5614776feeab83f54033df8881b35dc30e747a0384cb0fbc0a11fc9c125",
+      "files": 2,
+      "description": "Apple Human Interface Guidelines for Mac. Use when building macOS apps with SwiftUI or AppKit, implementing menu bars, toolbars, window management, or keyboard shortcuts. Triggers on tasks involving Mac UI, desktop apps, or Mac Catalyst."
+    },
+    "skill-creator": {
+      "hash": "b6b4ffcce87d618766961b82f25a63a4e31725f45cb0bb947197cd39f525e8d3",
+      "files": 18,
+      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy."
+    },
+    "typescript-expert": {
+      "hash": "d0bc5670f5e76506f01769a14eec0461c65faed73cee3a242463872f730d49f7",
+      "files": 5,
+      "description": ">-"
+    },
+    "ui-ux-pro-max": {
+      "hash": "7c3563be0e8f50c0c7067d8c91591cd65b656d5ac0b834729cfc93125aa4b67e",
+      "files": 29,
+      "description": "UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, mobile app, .html, .tsx, .vue, .svelte. Elements: button, modal, navbar, sidebar, card, table, form, chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, flat design. Topics: color palette, accessibility, animation, layout, typography, font pairing, spacing, hover, shadow, gradient. Integrations: shadcn/ui MCP for component search and examples.\""
+    },
+    "web-design-guidelines": {
+      "hash": "ccf7ea18675f0fc2a6ef72062a031f3354ba7e9a3f42ed577a5ace006cc09435",
+      "files": 1,
+      "description": "Review UI code for Web Interface Guidelines compliance. Use when asked to \"review my UI\", \"check accessibility\", \"audit design\", \"review UX\", or \"check my site against best practices\"."
+    },
+    "webapp-testing": {
+      "hash": "d3b3416035130609339e47c54fad993fd9ce78b677d1f450dff6402bc634d10b",
+      "files": 6,
+      "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs."
+    }
+  }
+}
