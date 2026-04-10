@@ -14,15 +14,15 @@
 ./install.sh
 ```
 
-### 2. 修改后必须推送
+### 2. 修改后必须同步
 
-安装完成后，**必须**提交并推送到 GitHub：
+安装完成后，**必须**运行 git-sync 将变更同步到 GitHub：
 
 ```bash
-git add -A
-git commit -m "描述你的变更"
-git push
+./git-sync
 ```
+
+> `git-sync` 会自动完成：暂存所有变更 → 提交 → 拉取远程更新 → 推送。无需手动 `git add/commit/push`。
 
 ### 3. 完整流程
 
@@ -32,8 +32,8 @@ git push
 # 1. 做出修改（编辑 skill、新增 skill、删除 skill 等）
 # 2. 安装到所有 AI 工具
 ./install.sh
-# 3. 提交并推送
-git add -A && git commit -m "你的 commit message" && git push
+# 3. 同步到 GitHub（自动 commit + pull + push）
+./git-sync
 ```
 
 **不要跳过任何步骤。**

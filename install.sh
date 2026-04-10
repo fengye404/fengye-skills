@@ -172,7 +172,6 @@ fengye-skills 安装脚本
   openclaw    仅安装到 OpenClaw
   opencode    仅安装到 OpenCode
   list        列出当前所有 skills
-  sync        仅检查 git 远程同步状态（不安装）
   help        显示此帮助信息
 
 示例:
@@ -203,84 +202,12 @@ list_skills() {
   echo -e "\n共 $(get_skills | wc -l) 个 skills"
 }
 
-# 计算单个 skill 的哈希
-# (removed - replaced by git sync)
-
-# Git 同步检查
-git_sync() {
-  # 不在 git 仓库中则跳过
-  if ! git -C "$REPO_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
-    return
-  fi
-
-  echo -e "\n${BLUE}=== Git 同步 ===${NC}"
-
-  # 检查是否有未提交的改动
-  local dirty=$(git -C "$REPO_DIR" status --porcelain 2>/dev/null)
-  if [ -n "$dirty" ]; then
-    local changed_count=$(echo "$dirty" | wc -l | tr -d ' ')
-    echo -e "${YELLOW}⚠ 有 $changed_count 个未提交的改动${NC}"
-    echo "$dirty" | head -10 | while read -r line; do
-      echo -e "  ${YELLOW}$line${NC}"
-    done
-    if [ "$changed_count" -gt 10 ]; then
-      echo -e "  ${YELLOW}... 还有 $((changed_count - 10)) 个${NC}"
-    fi
-    echo ""
-  fi
-
-  # 尝试 fetch 远程（静默，失败不阻塞）
-  if git -C "$REPO_DIR" fetch origin --quiet 2>/dev/null; then
-    local branch=$(git -C "$REPO_DIR" branch --show-current 2>/dev/null)
-    if [ -z "$branch" ]; then
-      return
-    fi
-
-    local local_hash=$(git -C "$REPO_DIR" rev-parse "$branch" 2>/dev/null)
-    local remote_hash=$(git -C "$REPO_DIR" rev-parse "origin/$branch" 2>/dev/null)
-    local base_hash=$(git -C "$REPO_DIR" merge-base "$branch" "origin/$branch" 2>/dev/null)
-
-    if [ "$local_hash" = "$remote_hash" ]; then
-      echo -e "${GREEN}✓ 与远程同步，已是最新${NC}"
-    elif [ "$local_hash" = "$base_hash" ]; then
-      # 本地落后于远程
-      local behind=$(git -C "$REPO_DIR" rev-list --count "$branch..origin/$branch" 2>/dev/null)
-      echo -e "${YELLOW}⚠ 远程有 $behind 个新提交，正在拉取...${NC}"
-      if [ -n "$dirty" ]; then
-        # 有未提交改动，stash 后 pull 再恢复
-        echo -e "${YELLOW}  暂存本地改动...${NC}"
-        git -C "$REPO_DIR" stash push -m "install.sh auto-stash" --quiet
-        git -C "$REPO_DIR" pull --rebase --quiet origin "$branch"
-        git -C "$REPO_DIR" stash pop --quiet 2>/dev/null || true
-        echo -e "${GREEN}✓ 已拉取远程更新并恢复本地改动${NC}"
-      else
-        git -C "$REPO_DIR" pull --rebase --quiet origin "$branch"
-        echo -e "${GREEN}✓ 已拉取远程更新${NC}"
-      fi
-    elif [ "$remote_hash" = "$base_hash" ]; then
-      # 本地领先于远程
-      local ahead=$(git -C "$REPO_DIR" rev-list --count "origin/$branch..$branch" 2>/dev/null)
-      echo -e "${YELLOW}⚠ 本地有 $ahead 个未推送的提交${NC}"
-      echo -e "${YELLOW}  安装完成后别忘了: git push${NC}"
-    else
-      # 双方都有新提交（分叉）
-      local ahead=$(git -C "$REPO_DIR" rev-list --count "origin/$branch..$branch" 2>/dev/null)
-      local behind=$(git -C "$REPO_DIR" rev-list --count "$branch..origin/$branch" 2>/dev/null)
-      echo -e "${RED}⚠ 分支已分叉：本地领先 $ahead，落后 $behind${NC}"
-      echo -e "${YELLOW}  请手动解决: git pull --rebase && git push${NC}"
-    fi
-  else
-    echo -e "${YELLOW}⚠ 无法连接远程仓库（离线模式）${NC}"
-  fi
-}
-
 # 主逻辑
 main() {
   local command="${1:-all}"
 
   case "$command" in
     all)
-      git_sync
       install_claude
       install_agents
       install_trae
@@ -304,7 +231,6 @@ main() {
     openclaw)    install_openclaw ;;
     opencode)    install_opencode ;;
     list)        list_skills ;;
-    sync)        git_sync ;;
     help|--help|-h) show_help ;;
     *)
       echo -e "${RED}未知命令: $command${NC}"
