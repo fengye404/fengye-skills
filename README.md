@@ -61,6 +61,8 @@ cd fengye-skills
 | **copywriting** | 营销文案撰写和优化 |
 | **create-readme** | 自动生成项目 README |
 | **fengye-blog-style** | fengye404.top 博客写作风格（个人定制化） |
+| **fengye-markdown-fetch** | 多源网页转 Markdown（Jina Reader / Defuddle / Raw） |
+| **fengye-x-fetch** | 抓取 X/Twitter 推文并转为 Markdown（GraphQL API） |
 | **find-skills** | 从 skills.sh 生态发现和安装 skills |
 | **frontend-design** | mager 风格的前端设计指导 |
 | **macos-design-guidelines** | Apple Human Interface Guidelines for Mac |

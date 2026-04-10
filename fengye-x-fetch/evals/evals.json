@@ -1,0 +1,119 @@
+{
+  "skill_name": "fengye-x-fetch",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Fetch a regular tweet by URL",
+      "expected_output": "Tweet text, author info, metadata",
+      "test_url": "https://x.com/embedmon/status/2042487351608508819",
+      "expectations": [
+        "Exit code is 0",
+        "Output contains at least 50 characters",
+        "Output contains '@embedmon'"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Fetch tweet with --json flag",
+      "expected_output": "Valid JSON with tweet data",
+      "test_url": "https://x.com/embedmon/status/2042487351608508819",
+      "test_args": ["--json"],
+      "expectations": [
+        "Exit code is 0",
+        "Output is valid JSON",
+        "JSON contains 'tweet' field",
+        "Output contains 'author'"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Fetch tweet by ID only (not URL)",
+      "expected_output": "Tweet text from just the ID",
+      "test_url": "2042487351608508819",
+      "expectations": [
+        "Exit code is 0",
+        "Output contains at least 50 characters"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Fetch tweet with --raw flag for raw API response",
+      "expected_output": "Raw GraphQL API JSON",
+      "test_url": "https://x.com/embedmon/status/2042487351608508819",
+      "test_args": ["--raw"],
+      "expectations": [
+        "Exit code is 0",
+        "Output is valid JSON",
+        "Output contains 'tweet_results' or 'data'"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Fetch a twitter.com URL (old domain)",
+      "expected_output": "Should handle twitter.com URLs too",
+      "test_url": "https://twitter.com/embedmon/status/2042487351608508819",
+      "expectations": [
+        "Exit code is 0",
+        "Output contains at least 50 characters"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Fetch tweet that returns empty tweet_results (restricted)",
+      "expected_output": "Error message about tweet not found",
+      "test_url": "https://x.com/elonmusk/status/1893399498765873638",
+      "expect_failure": true,
+      "expectations": [
+        "Script exits with non-zero exit code",
+        "Stderr contains 'not found' or 'deleted' or 'protected'"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Fetch tweet JSON has correct structure",
+      "expected_output": "JSON with id, text, author, created_at",
+      "test_url": "https://x.com/embedmon/status/2042487351608508819",
+      "test_args": ["--json"],
+      "expectations": [
+        "Exit code is 0",
+        "Output contains 'id'",
+        "Output contains 'text'",
+        "Output contains 'created_at'",
+        "Output contains 'like_count'"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Test --help flag shows usage",
+      "expected_output": "Usage help text",
+      "test_url": "--help",
+      "expectations": [
+        "Exit code is 0",
+        "Output contains 'usage' or 'Usage' or 'fetch_tweet'"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Fetch tweet with no auth token should fail",
+      "expected_output": "Error about missing auth token",
+      "test_url": "https://x.com/embedmon/status/2042487351608508819",
+      "test_env": {"X_AUTH_TOKEN": ""},
+      "expect_failure": true,
+      "expectations": [
+        "Script exits with non-zero exit code",
+        "Stderr contains 'auth' or 'token' or 'AUTH'"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Fetch tweet with garbage URL format",
+      "expected_output": "Error about invalid URL",
+      "test_url": "not-a-valid-tweet-url",
+      "expect_failure": true,
+      "expectations": [
+        "Script exits with non-zero exit code",
+        "Stderr contains 'Error' or 'Cannot extract'"
+      ]
+    }
+  ]
+}

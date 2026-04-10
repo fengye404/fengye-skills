@@ -1,0 +1,128 @@
+{
+  "skill_name": "fengye-markdown-fetch",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Fetch https://www.paulgraham.com/greatwork.html as Markdown",
+      "expected_output": "Clean markdown of Paul Graham's 'How to Do Great Work' essay",
+      "test_url": "https://www.paulgraham.com/greatwork.html",
+      "expectations": [
+        "Output contains at least 1000 characters",
+        "Output contains 'How to Do Great Work'",
+        "Output contains 'Provider:'",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Fetch GitHub README via raw URL",
+      "expected_output": "Clean markdown of awesome-design-systems README",
+      "test_url": "https://raw.githubusercontent.com/alexpate/awesome-design-systems/master/README.md",
+      "test_args": ["--provider", "raw"],
+      "expectations": [
+        "Output contains '|'",
+        "Output contains 'Ant Design' or 'Adobe Spectrum'",
+        "Content length exceeds 5000 characters",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Fetch a CSDN blog article via Bing redirect URL",
+      "expected_output": "Chinese Python tutorial content from CSDN",
+      "test_url": "https://blog.csdn.net/Python_0011/article/details/145646554",
+      "expectations": [
+        "Output has Chinese characters",
+        "Output contains 'Python'",
+        "Content length exceeds 1000 characters",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Fetch with --json flag to get structured output",
+      "expected_output": "Valid JSON with provider, title, content, url fields",
+      "test_url": "https://example.com",
+      "test_args": ["--json"],
+      "expectations": [
+        "Output is valid JSON",
+        "JSON contains 'provider' field",
+        "JSON contains 'title' field",
+        "JSON contains 'content' field",
+        "JSON contains 'url' field set to 'https://example.com'",
+        "JSON contains 'content_length' field as integer > 0"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Fetch with --provider jina explicitly",
+      "expected_output": "Content fetched specifically via Jina Reader",
+      "test_url": "https://example.com",
+      "test_args": ["--provider", "jina", "--json"],
+      "expectations": [
+        "JSON output has provider set to 'jina'",
+        "Output contains 'Example Domain'",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Fetch with --provider defuddle explicitly",
+      "expected_output": "Content fetched via Defuddle",
+      "test_url": "https://example.com",
+      "test_args": ["--provider", "defuddle", "--json"],
+      "expectations": [
+        "JSON output has provider set to 'defuddle'",
+        "Output contains 'Example Domain' or 'example'",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Fetch a Wikipedia article",
+      "expected_output": "Clean markdown of a Wikipedia article",
+      "test_url": "https://en.wikipedia.org/wiki/Python_(programming_language)",
+      "expectations": [
+        "Output contains 'Python' in the content",
+        "Output contains 'programming language' somewhere",
+        "Content length exceeds 5000 characters",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Fetch with invalid URL should fail gracefully",
+      "expected_output": "Error message, non-zero exit code",
+      "test_url": "https://thisdomaindoesnotexist12345.com/page",
+      "expect_failure": true,
+      "expectations": [
+        "Script exits with non-zero exit code",
+        "Stderr contains 'Error' or 'Failed'",
+        "No markdown content on stdout"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Fetch with --timeout 5 on a valid URL",
+      "expected_output": "Content fetched within timeout",
+      "test_url": "https://example.com",
+      "test_args": ["--timeout", "5", "--json"],
+      "expectations": [
+        "Output is valid JSON",
+        "Content was fetched successfully",
+        "Exit code is 0"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Fetch a Hacker News page",
+      "expected_output": "Markdown content from Hacker News",
+      "test_url": "https://news.ycombinator.com/",
+      "expectations": [
+        "Content length exceeds 500 characters",
+        "Output contains 'Hacker News' or 'hacker' or 'news.ycombinator'",
+        "Exit code is 0"
+      ]
+    }
+  ]
+}
