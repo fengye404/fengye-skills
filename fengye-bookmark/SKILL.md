@@ -32,36 +32,36 @@ Use this skill when the user wants to:
 
 ## Complete Workflow
 
-### Step 1: Fetch Content (双重获取)
+### Step 1: Fetch Content (Dual Fetch)
 
-**同时使用两个 fetcher 抓取同一 URL**，对比后选择更完整的版本。
+Fetch the same URL with **both** fetchers, then compare and pick the more complete result.
 
-#### 1a. 专用 fetcher（按 URL 类型选）
+#### 1a. Primary fetcher (by URL type)
 
 | URL Pattern | Tool | Command |
 |---|---|---|
 | `x.com/*` or `twitter.com/*` | fengye-x-fetch | `python <skill-path>/scripts/fetch_tweet.py "<url>" --full-article --download-media /Users/fengye/Documents/bookmarks/assets` |
 | Everything else | fengye-markdown-fetch | `python <skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets` |
 
-#### 1b. 通用 fetcher（始终执行）
+#### 1b. Secondary fetcher (always run)
 
-无论 URL 类型，都额外用 fengye-markdown-fetch 再抓一次：
+Regardless of URL type, also fetch with fengye-markdown-fetch:
 
 ```bash
 python <fengye-markdown-fetch-skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets
 ```
 
-> 对于非 X/Twitter URL，1a 和 1b 使用的是同一个工具，无需重复执行。
+> For non-X/Twitter URLs, 1a and 1b use the same tool — no need to run twice.
 
-#### 1c. 对比选择
+#### 1c. Compare and choose
 
-拿到两份结果后：
-1. 比较正文长度、标题是否存在、图片数量
-2. 检查是否有内容截断（正文异常短、末尾不完整）
-3. **选择更完整的版本**作为最终内容
-4. 如果两者差异较大，询问用户偏好
+With both results in hand:
+1. Compare body length, whether a title is present, and image count
+2. Check for truncation (abnormally short body, incomplete ending)
+3. **Pick the more complete version** as the final content
+4. If the two differ significantly, ask the user which to keep
 
-**Important:** If the X_AUTH_TOKEN is needed and not set, it should be loaded from the environment (`~/.zshrc`) or `~/.env`.
+**Important:** If the X_AUTH_TOKEN is needed and not set, load it from the environment (`~/.zshrc`) or `~/.env`.
 
 ### Step 2: Check for Duplicates
 
