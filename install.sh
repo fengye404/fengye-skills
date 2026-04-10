@@ -172,7 +172,7 @@ fengye-skills 安装脚本
   openclaw    仅安装到 OpenClaw
   opencode    仅安装到 OpenCode
   list        列出当前所有 skills
-  status      对比 lock 文件，显示哪些 skill 有变更
+  sync        仅检查 git 远程同步状态（不安装）
   help        显示此帮助信息
 
 示例:
@@ -204,164 +204,74 @@ list_skills() {
 }
 
 # 计算单个 skill 的哈希
-compute_skill_hash() {
-  local skill_dir="$1"
-  python3 << PYEOF
-import os, hashlib
-skill_dir = "$skill_dir"
-file_hashes = []
-for root, dirs, files in os.walk(skill_dir):
-    for f in sorted(files):
-        if f in ('.DS_Store', '.query_id_cache.json'):
-            continue
-        fp = os.path.join(root, f)
-        rel = os.path.relpath(fp, skill_dir)
-        with open(fp, 'rb') as fh:
-            h = hashlib.sha256(rel.encode() + fh.read()).hexdigest()
-        file_hashes.append(h)
-print(hashlib.sha256(''.join(sorted(file_hashes)).encode()).hexdigest())
-PYEOF
-}
+# (removed - replaced by git sync)
 
-# 从 lock 文件读取某个 skill 的旧哈希
-get_locked_hash() {
-  local skill="$1"
-  local lock_file="$REPO_DIR/skills-lock.json"
-  if [ -f "$lock_file" ]; then
-    python3 -c "
-import json
-with open('$lock_file') as f:
-    data = json.load(f)
-print(data.get('skills', {}).get('$skill', {}).get('hash', ''))
-" 2>/dev/null
-  fi
-}
-
-# 对比 lock 文件，显示变更摘要
-diff_lock() {
-  local lock_file="$REPO_DIR/skills-lock.json"
-  local new_skills=()
-  local changed_skills=()
-  local unchanged_skills=()
-
-  if [ ! -f "$lock_file" ]; then
-    echo -e "\n${YELLOW}首次安装，跳过变更检测${NC}"
+# Git 同步检查
+git_sync() {
+  # 不在 git 仓库中则跳过
+  if ! git -C "$REPO_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
     return
   fi
 
-  # 检查已删除的 skill
-  local old_skills=$(python3 -c "
-import json
-with open('$lock_file') as f:
-    data = json.load(f)
-for s in sorted(data.get('skills', {}).keys()):
-    print(s)
-" 2>/dev/null)
+  echo -e "\n${BLUE}=== Git 同步 ===${NC}"
 
-  local current_skills=$(get_skills | sort)
+  # 检查是否有未提交的改动
+  local dirty=$(git -C "$REPO_DIR" status --porcelain 2>/dev/null)
+  if [ -n "$dirty" ]; then
+    local changed_count=$(echo "$dirty" | wc -l | tr -d ' ')
+    echo -e "${YELLOW}⚠ 有 $changed_count 个未提交的改动${NC}"
+    echo "$dirty" | head -10 | while read -r line; do
+      echo -e "  ${YELLOW}$line${NC}"
+    done
+    if [ "$changed_count" -gt 10 ]; then
+      echo -e "  ${YELLOW}... 还有 $((changed_count - 10)) 个${NC}"
+    fi
+    echo ""
+  fi
 
-  for skill in $current_skills; do
-    local old_hash=$(get_locked_hash "$skill")
-    if [ -z "$old_hash" ]; then
-      new_skills+=("$skill")
-    else
-      local new_hash=$(compute_skill_hash "$REPO_DIR/$skill")
-      if [ "$old_hash" != "$new_hash" ]; then
-        changed_skills+=("$skill")
+  # 尝试 fetch 远程（静默，失败不阻塞）
+  if git -C "$REPO_DIR" fetch origin --quiet 2>/dev/null; then
+    local branch=$(git -C "$REPO_DIR" branch --show-current 2>/dev/null)
+    if [ -z "$branch" ]; then
+      return
+    fi
+
+    local local_hash=$(git -C "$REPO_DIR" rev-parse "$branch" 2>/dev/null)
+    local remote_hash=$(git -C "$REPO_DIR" rev-parse "origin/$branch" 2>/dev/null)
+    local base_hash=$(git -C "$REPO_DIR" merge-base "$branch" "origin/$branch" 2>/dev/null)
+
+    if [ "$local_hash" = "$remote_hash" ]; then
+      echo -e "${GREEN}✓ 与远程同步，已是最新${NC}"
+    elif [ "$local_hash" = "$base_hash" ]; then
+      # 本地落后于远程
+      local behind=$(git -C "$REPO_DIR" rev-list --count "$branch..origin/$branch" 2>/dev/null)
+      echo -e "${YELLOW}⚠ 远程有 $behind 个新提交，正在拉取...${NC}"
+      if [ -n "$dirty" ]; then
+        # 有未提交改动，stash 后 pull 再恢复
+        echo -e "${YELLOW}  暂存本地改动...${NC}"
+        git -C "$REPO_DIR" stash push -m "install.sh auto-stash" --quiet
+        git -C "$REPO_DIR" pull --rebase --quiet origin "$branch"
+        git -C "$REPO_DIR" stash pop --quiet 2>/dev/null || true
+        echo -e "${GREEN}✓ 已拉取远程更新并恢复本地改动${NC}"
       else
-        unchanged_skills+=("$skill")
+        git -C "$REPO_DIR" pull --rebase --quiet origin "$branch"
+        echo -e "${GREEN}✓ 已拉取远程更新${NC}"
       fi
+    elif [ "$remote_hash" = "$base_hash" ]; then
+      # 本地领先于远程
+      local ahead=$(git -C "$REPO_DIR" rev-list --count "origin/$branch..$branch" 2>/dev/null)
+      echo -e "${YELLOW}⚠ 本地有 $ahead 个未推送的提交${NC}"
+      echo -e "${YELLOW}  安装完成后别忘了: git push${NC}"
+    else
+      # 双方都有新提交（分叉）
+      local ahead=$(git -C "$REPO_DIR" rev-list --count "origin/$branch..$branch" 2>/dev/null)
+      local behind=$(git -C "$REPO_DIR" rev-list --count "$branch..origin/$branch" 2>/dev/null)
+      echo -e "${RED}⚠ 分支已分叉：本地领先 $ahead，落后 $behind${NC}"
+      echo -e "${YELLOW}  请手动解决: git pull --rebase && git push${NC}"
     fi
-  done
-
-  local deleted_skills=()
-  for skill in $old_skills; do
-    if ! echo "$current_skills" | grep -qw "$skill"; then
-      deleted_skills+=("$skill")
-    fi
-  done
-
-  echo -e "\n${BLUE}=== 变更摘要 ===${NC}"
-
-  if [ ${#new_skills[@]} -gt 0 ]; then
-    for s in "${new_skills[@]}"; do
-      echo -e "  ${GREEN}+ 新增${NC} $s"
-    done
+  else
+    echo -e "${YELLOW}⚠ 无法连接远程仓库（离线模式）${NC}"
   fi
-  if [ ${#changed_skills[@]} -gt 0 ]; then
-    for s in "${changed_skills[@]}"; do
-      echo -e "  ${YELLOW}~ 变更${NC} $s"
-    done
-  fi
-  if [ ${#deleted_skills[@]} -gt 0 ]; then
-    for s in "${deleted_skills[@]}"; do
-      echo -e "  ${RED}- 删除${NC} $s"
-    done
-  fi
-  if [ ${#unchanged_skills[@]} -gt 0 ]; then
-    echo -e "  ${NC}  未变 ${#unchanged_skills[@]} 个 skill${NC}"
-  fi
-
-  local total_changes=$(( ${#new_skills[@]} + ${#changed_skills[@]} + ${#deleted_skills[@]} ))
-  if [ "$total_changes" -eq 0 ]; then
-    echo -e "  ${NC}无变更${NC}"
-  fi
-}
-
-# 生成 skills-lock.json
-generate_lock() {
-  local lock_file="$REPO_DIR/skills-lock.json"
-
-  python3 << PYEOF
-import json, os, hashlib, subprocess, re
-from pathlib import Path
-
-repo = "$REPO_DIR"
-skills = {}
-
-for d in sorted(os.listdir(repo)):
-    skill_dir = os.path.join(repo, d)
-    if not os.path.isdir(skill_dir) or d.startswith('.'):
-        continue
-    skill_md = os.path.join(skill_dir, 'SKILL.md')
-    claude_md = os.path.join(skill_dir, 'CLAUDE.md')
-    if not os.path.exists(skill_md) and not os.path.exists(claude_md):
-        continue
-
-    # Compute hash
-    file_hashes = []
-    file_count = 0
-    for root, dirs, files in os.walk(skill_dir):
-        for f in sorted(files):
-            if f in ('.DS_Store', '.query_id_cache.json'):
-                continue
-            fp = os.path.join(root, f)
-            rel = os.path.relpath(fp, skill_dir)
-            with open(fp, 'rb') as fh:
-                h = hashlib.sha256(rel.encode() + fh.read()).hexdigest()
-            file_hashes.append(h)
-            file_count += 1
-    combined = hashlib.sha256(''.join(sorted(file_hashes)).encode()).hexdigest()
-
-    # Extract description
-    desc = ""
-    if os.path.exists(skill_md):
-        with open(skill_md) as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('description:'):
-                    desc = line.split(':', 1)[1].strip().strip('"').strip("'")
-                    break
-
-    skills[d] = {"hash": combined, "files": file_count, "description": desc}
-
-lock = {"version": 1, "skills": skills}
-with open("$lock_file", 'w') as f:
-    json.dump(lock, f, indent=2, ensure_ascii=False)
-    f.write('\n')
-PYEOF
-
-  echo -e "\n${GREEN}✓${NC} skills-lock.json 已更新"
 }
 
 # 主逻辑
@@ -370,6 +280,7 @@ main() {
 
   case "$command" in
     all)
+      git_sync
       install_claude
       install_agents
       install_trae
@@ -380,8 +291,6 @@ main() {
       install_codex
       install_openclaw
       install_opencode
-      diff_lock
-      generate_lock
       echo -e "\n${GREEN}✓ 所有 skills 已同步到各 AI 工具${NC}"
       ;;
     claude)      install_claude ;;
@@ -395,7 +304,7 @@ main() {
     openclaw)    install_openclaw ;;
     opencode)    install_opencode ;;
     list)        list_skills ;;
-    status)      diff_lock ;;
+    sync)        git_sync ;;
     help|--help|-h) show_help ;;
     *)
       echo -e "${RED}未知命令: $command${NC}"
