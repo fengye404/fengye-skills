@@ -1,0 +1,10 @@
+# Runtime caches
+**/.query_id_cache.json
+
+# Eval workspaces & reports
+*-workspace/
+*-report.html
+run_functional_eval.py
+
+# OS
+.DS_Store
