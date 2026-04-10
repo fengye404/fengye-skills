@@ -172,6 +172,7 @@ fengye-skills 安装脚本
   openclaw    仅安装到 OpenClaw
   opencode    仅安装到 OpenCode
   list        列出当前所有 skills
+  status      对比 lock 文件，显示哪些 skill 有变更
   help        显示此帮助信息
 
 示例:
@@ -202,57 +203,164 @@ list_skills() {
   echo -e "\n共 $(get_skills | wc -l) 个 skills"
 }
 
+# 计算单个 skill 的哈希
+compute_skill_hash() {
+  local skill_dir="$1"
+  python3 << PYEOF
+import os, hashlib
+skill_dir = "$skill_dir"
+file_hashes = []
+for root, dirs, files in os.walk(skill_dir):
+    for f in sorted(files):
+        if f in ('.DS_Store', '.query_id_cache.json'):
+            continue
+        fp = os.path.join(root, f)
+        rel = os.path.relpath(fp, skill_dir)
+        with open(fp, 'rb') as fh:
+            h = hashlib.sha256(rel.encode() + fh.read()).hexdigest()
+        file_hashes.append(h)
+print(hashlib.sha256(''.join(sorted(file_hashes)).encode()).hexdigest())
+PYEOF
+}
+
+# 从 lock 文件读取某个 skill 的旧哈希
+get_locked_hash() {
+  local skill="$1"
+  local lock_file="$REPO_DIR/skills-lock.json"
+  if [ -f "$lock_file" ]; then
+    python3 -c "
+import json
+with open('$lock_file') as f:
+    data = json.load(f)
+print(data.get('skills', {}).get('$skill', {}).get('hash', ''))
+" 2>/dev/null
+  fi
+}
+
+# 对比 lock 文件，显示变更摘要
+diff_lock() {
+  local lock_file="$REPO_DIR/skills-lock.json"
+  local new_skills=()
+  local changed_skills=()
+  local unchanged_skills=()
+
+  if [ ! -f "$lock_file" ]; then
+    echo -e "\n${YELLOW}首次安装，跳过变更检测${NC}"
+    return
+  fi
+
+  # 检查已删除的 skill
+  local old_skills=$(python3 -c "
+import json
+with open('$lock_file') as f:
+    data = json.load(f)
+for s in sorted(data.get('skills', {}).keys()):
+    print(s)
+" 2>/dev/null)
+
+  local current_skills=$(get_skills | sort)
+
+  for skill in $current_skills; do
+    local old_hash=$(get_locked_hash "$skill")
+    if [ -z "$old_hash" ]; then
+      new_skills+=("$skill")
+    else
+      local new_hash=$(compute_skill_hash "$REPO_DIR/$skill")
+      if [ "$old_hash" != "$new_hash" ]; then
+        changed_skills+=("$skill")
+      else
+        unchanged_skills+=("$skill")
+      fi
+    fi
+  done
+
+  local deleted_skills=()
+  for skill in $old_skills; do
+    if ! echo "$current_skills" | grep -qw "$skill"; then
+      deleted_skills+=("$skill")
+    fi
+  done
+
+  echo -e "\n${BLUE}=== 变更摘要 ===${NC}"
+
+  if [ ${#new_skills[@]} -gt 0 ]; then
+    for s in "${new_skills[@]}"; do
+      echo -e "  ${GREEN}+ 新增${NC} $s"
+    done
+  fi
+  if [ ${#changed_skills[@]} -gt 0 ]; then
+    for s in "${changed_skills[@]}"; do
+      echo -e "  ${YELLOW}~ 变更${NC} $s"
+    done
+  fi
+  if [ ${#deleted_skills[@]} -gt 0 ]; then
+    for s in "${deleted_skills[@]}"; do
+      echo -e "  ${RED}- 删除${NC} $s"
+    done
+  fi
+  if [ ${#unchanged_skills[@]} -gt 0 ]; then
+    echo -e "  ${NC}  未变 ${#unchanged_skills[@]} 个 skill${NC}"
+  fi
+
+  local total_changes=$(( ${#new_skills[@]} + ${#changed_skills[@]} + ${#deleted_skills[@]} ))
+  if [ "$total_changes" -eq 0 ]; then
+    echo -e "  ${NC}无变更${NC}"
+  fi
+}
+
 # 生成 skills-lock.json
 generate_lock() {
   local lock_file="$REPO_DIR/skills-lock.json"
-  local tmp_file="$lock_file.tmp"
-  local first=true
 
-  echo '{' > "$tmp_file"
-  echo '  "version": 1,' >> "$tmp_file"
-  echo '  "skills": {' >> "$tmp_file"
+  python3 << PYEOF
+import json, os, hashlib, subprocess, re
+from pathlib import Path
 
-  for skill in $(get_skills | sort); do
-    local skill_dir="$REPO_DIR/$skill"
+repo = "$REPO_DIR"
+skills = {}
 
-    # 计算 skill 目录的内容哈希（排除 .DS_Store 和缓存文件）
-    local hash=$(find "$skill_dir" -type f \
-      ! -name '.DS_Store' \
-      ! -name '.query_id_cache.json' \
-      -exec shasum -a 256 {} \; | sort | shasum -a 256 | cut -d' ' -f1)
+for d in sorted(os.listdir(repo)):
+    skill_dir = os.path.join(repo, d)
+    if not os.path.isdir(skill_dir) or d.startswith('.'):
+        continue
+    skill_md = os.path.join(skill_dir, 'SKILL.md')
+    claude_md = os.path.join(skill_dir, 'CLAUDE.md')
+    if not os.path.exists(skill_md) and not os.path.exists(claude_md):
+        continue
 
-    # 统计文件数
-    local file_count=$(find "$skill_dir" -type f \
-      ! -name '.DS_Store' \
-      ! -name '.query_id_cache.json' | wc -l | tr -d ' ')
+    # Compute hash
+    file_hashes = []
+    file_count = 0
+    for root, dirs, files in os.walk(skill_dir):
+        for f in sorted(files):
+            if f in ('.DS_Store', '.query_id_cache.json'):
+                continue
+            fp = os.path.join(root, f)
+            rel = os.path.relpath(fp, skill_dir)
+            with open(fp, 'rb') as fh:
+                h = hashlib.sha256(rel.encode() + fh.read()).hexdigest()
+            file_hashes.append(h)
+            file_count += 1
+    combined = hashlib.sha256(''.join(sorted(file_hashes)).encode()).hexdigest()
 
-    # 提取描述
-    local desc=""
-    if [ -f "$skill_dir/SKILL.md" ]; then
-      desc=$(grep -m1 '^description:' "$skill_dir/SKILL.md" 2>/dev/null | sed 's/^description: *//;s/^"//;s/"$//' | head -1)
-    fi
+    # Extract description
+    desc = ""
+    if os.path.exists(skill_md):
+        with open(skill_md) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('description:'):
+                    desc = line.split(':', 1)[1].strip().strip('"').strip("'")
+                    break
 
-    if [ "$first" = true ]; then
-      first=false
-    else
-      echo ',' >> "$tmp_file"
-    fi
+    skills[d] = {"hash": combined, "files": file_count, "description": desc}
 
-    # 转义 JSON 字符串中的特殊字符
-    desc=$(echo "$desc" | sed 's/\\/\\\\/g; s/"/\\"/g')
+lock = {"version": 1, "skills": skills}
+with open("$lock_file", 'w') as f:
+    json.dump(lock, f, indent=2, ensure_ascii=False)
+    f.write('\n')
+PYEOF
 
-    printf '    "%s": {\n' "$skill" >> "$tmp_file"
-    printf '      "hash": "%s",\n' "$hash" >> "$tmp_file"
-    printf '      "files": %s,\n' "$file_count" >> "$tmp_file"
-    printf '      "description": "%s"\n' "$desc" >> "$tmp_file"
-    printf '    }' >> "$tmp_file"
-  done
-
-  echo '' >> "$tmp_file"
-  echo '  }' >> "$tmp_file"
-  echo '}' >> "$tmp_file"
-
-  mv "$tmp_file" "$lock_file"
   echo -e "\n${GREEN}✓${NC} skills-lock.json 已更新"
 }
 
@@ -272,6 +380,7 @@ main() {
       install_codex
       install_openclaw
       install_opencode
+      diff_lock
       generate_lock
       echo -e "\n${GREEN}✓ 所有 skills 已同步到各 AI 工具${NC}"
       ;;
@@ -286,6 +395,7 @@ main() {
     openclaw)    install_openclaw ;;
     opencode)    install_opencode ;;
     list)        list_skills ;;
+    status)      diff_lock ;;
     help|--help|-h) show_help ;;
     *)
       echo -e "${RED}未知命令: $command${NC}"
