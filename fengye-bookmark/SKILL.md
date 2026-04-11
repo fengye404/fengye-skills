@@ -20,7 +20,7 @@ Use this skill when the user wants to:
 ```
 ~/Documents/bookmarks/
 ├── index.csv          # Title, Category, URL, Description, Saved Path
-├── saved/             # Markdown files
+├── articles/          # Markdown files
 │   ├── how-to-build-apis.md
 │   └── understanding-react-hooks.md
 └── assets/            # Downloaded media, organized per article
@@ -54,7 +54,7 @@ Rules:
 - At least 3 English words separated by hyphens
 - Based on the article title or URL
 - Lowercase, no special characters
-- Ensure uniqueness (check existing files in `saved/`)
+- Ensure uniqueness (check existing files in `articles/`)
 - The name (without `.md`) will also be the asset subdirectory name
 
 Examples:
@@ -105,7 +105,7 @@ The `--download-media` flag already downloads media and replaces URLs. But the p
 **Replace them with relative paths** for portability:
 - `/Users/fengye/Documents/bookmarks/assets/<article-name>/xxx.png` → `../assets/<article-name>/xxx.png`
 
-This ensures the markdown renders correctly from the `saved/` directory.
+This ensures the markdown renders correctly from the `articles/` directory.
 
 ### Step 5: Extract Metadata
 
@@ -115,11 +115,11 @@ From the fetched content, extract or infer:
 - **Category**: Infer from content. Common categories:
   - Technology, Programming, AI/ML, Design, Business, Science, Personal Development, etc.
   - If uncertain, ask the user
-- **Description**: Short phrase summarizing the article (≤ 50 chars for index)
+- **Description**: 1-2 sentence summary of the article's main point
 
 ### Step 6: Save Markdown File
 
-Save to `/Users/fengye/Documents/bookmarks/saved/<article-name>.md`:
+Save to `/Users/fengye/Documents/bookmarks/articles/<article-name>.md`:
 
 ```markdown
 ---
@@ -150,10 +150,7 @@ Append a new row to `/Users/fengye/Documents/bookmarks/index.csv`:
 
 Rules:
 - Quote fields that contain commas
-- `saved-path` is relative: `saved/[filename].md`
-- **`desc` must be ≤ 50 characters** — a short phrase, not a full sentence. Examples:
-  - Good: `Paul Graham on doing great work`
-  - Bad: `Paul Graham's comprehensive essay on doing great work across any field — covering curiosity, originality, morale, and the four-step recipe for meaningful achievement.`
+- `saved-path` is relative: `articles/[filename].md`
 - If index.csv doesn't exist, create it with a header row first:
   ```
   title,category,url,desc,saved_path
