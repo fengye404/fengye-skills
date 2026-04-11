@@ -148,6 +148,35 @@ Append a new row to `/Users/fengye/Documents/bookmarks/index.csv`:
 [title],[category],[url],[desc],[saved-path]
 ```
 
+### Step 8: Sync to Blog Bookmarks Page
+
+After saving the bookmark locally, add it to the blog's bookmarks page.
+
+**Data file:** `/Users/fengye/workspace/blog/fengye404.github.io/source/_data/bookmarks.yml`
+
+Append a new entry under the appropriate `class_name` group (match by category):
+
+```yaml
+    - title: "[Article Title]"
+      link: [Original URL]
+      description: [1-2 sentence description]
+      date: "[YYYY-MM-DD]"
+```
+
+Rules:
+- Find an existing group whose `class_name` matches the article's category
+- If no matching group exists, create a new one at the end of the file
+- **Date must be quoted** (`"2026-04-11"`) to avoid YAML parsing it as a Date object
+- Title should also be quoted if it contains special characters
+
+After updating the YAML file, rebuild and deploy the blog:
+
+```bash
+cd /Users/fengye/workspace/blog/fengye404.github.io
+npx hexo clean && npx hexo generate && npx hexo deploy
+git add -A && git commit -m "bookmark: add [article-name]" && git push origin hexo-source
+```
+
 Rules:
 - Quote fields that contain commas
 - `saved-path` is relative: `articles/[filename].md`
