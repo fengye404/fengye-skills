@@ -577,15 +577,58 @@ _MEDIA_URL_PATTERNS = re.compile(
 )
 
 
-def _url_to_filename(url: str) -> str:
+# Content-Type to extension mapping
+_CONTENT_TYPE_EXT = {
+    "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif",
+    "image/webp": ".webp", "image/svg+xml": ".svg", "image/avif": ".avif",
+    "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov",
+    "audio/mpeg": ".mp3", "audio/wav": ".wav", "audio/ogg": ".ogg",
+    "audio/flac": ".flac", "audio/aac": ".aac", "audio/mp4": ".m4a",
+}
+
+
+def _upgrade_media_url(url: str) -> str:
+    """Upgrade media URLs to original quality where possible."""
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.hostname == "pbs.twimg.com" and "/media/" in parsed_url.path:
+        qs = urllib.parse.parse_qs(parsed_url.query)
+        if qs.get("name", [None])[0] != "orig":
+            qs["name"] = ["orig"]
+            new_query = urllib.parse.urlencode(qs, doseq=True)
+            return urllib.parse.urlunparse(parsed_url._replace(query=new_query))
+    return url
+
+
+def _ext_from_url(url: str) -> str:
+    """Extract media extension from URL, checking both path and query params."""
+    parsed_url = urllib.parse.urlparse(url)
+    # Check path extension
+    ext = Path(parsed_url.path).suffix.lower()
+    ext = re.sub(r"\?.*", "", ext)
+    if ext in _MEDIA_EXTENSIONS:
+        return ext
+    # Check ?format= query param (X/Twitter style)
+    qs = urllib.parse.parse_qs(parsed_url.query)
+    fmt = qs.get("format", [None])[0]
+    if fmt:
+        candidate = f".{fmt.lower()}"
+        if candidate in _MEDIA_EXTENSIONS:
+            return candidate
+    return ""
+
+
+def _url_to_filename(url: str, content_type: str = "") -> str:
     """Generate a deterministic filename from URL: basename-hash8.ext"""
     parsed_url = urllib.parse.urlparse(url)
     path_part = Path(parsed_url.path)
 
-    ext = path_part.suffix.lower()
-    ext = re.sub(r"\?.*", "", ext)
-    if ext not in _MEDIA_EXTENSIONS or len(ext) > 6:
-        ext = ".jpg"
+    # Try extension from URL, then content-type, then default
+    ext = _ext_from_url(url)
+    if not ext and content_type:
+        base_ct = content_type.split(";")[0].strip().lower()
+        ext = _CONTENT_TYPE_EXT.get(base_ct, "")
+    if not ext:
+        ext = ".jpg"  # safe default
 
     stem = path_part.stem or "media"
     stem = re.sub(r"[^\w\-]", "-", stem)[:60]
@@ -624,20 +667,24 @@ def download_media_in_markdown(markdown: str, output_dir: str) -> str:
     def _download(url: str) -> Optional[str]:
         nonlocal count
         url = url.strip()
+        url = _upgrade_media_url(url)
         if url in downloaded:
             return downloaded[url]
 
-        filename = _url_to_filename(url)
-        local_path = os.path.join(output_dir, filename)
-
         try:
-            resp = requests.get(url, timeout=30)
+            resp = requests.get(url, timeout=30, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                              "Chrome/131.0.0.0 Safari/537.36"
+            })
             resp.raise_for_status()
             content_type = resp.headers.get("content-type", "")
             if "text/html" in content_type and not url.endswith(".svg"):
                 print(f"  Skipped (HTML response): {url}", file=sys.stderr)
                 downloaded[url] = None
                 return None
+            filename = _url_to_filename(url, content_type)
+            local_path = os.path.join(output_dir, filename)
             with open(local_path, "wb") as f:
                 f.write(resp.content)
             count += 1

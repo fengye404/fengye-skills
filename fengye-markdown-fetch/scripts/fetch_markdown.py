@@ -257,15 +257,44 @@ def _upgrade_media_url(url: str) -> str:
     return url
 
 
-def _url_to_filename(url: str) -> str:
+# Content-Type to extension mapping
+_CONTENT_TYPE_EXT = {
+    "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif",
+    "image/webp": ".webp", "image/svg+xml": ".svg", "image/avif": ".avif",
+    "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov",
+    "audio/mpeg": ".mp3", "audio/wav": ".wav", "audio/ogg": ".ogg",
+    "audio/flac": ".flac", "audio/aac": ".aac", "audio/mp4": ".m4a",
+}
+
+
+def _ext_from_url(url: str) -> str:
+    """Extract media extension from URL, checking both path and query params."""
+    parsed = urllib.parse.urlparse(url)
+    ext = Path(parsed.path).suffix.lower()
+    ext = re.sub(r"\?.*", "", ext)
+    if ext in _MEDIA_EXTENSIONS:
+        return ext
+    # Check ?format= query param (X/Twitter style)
+    qs = urllib.parse.parse_qs(parsed.query)
+    fmt = qs.get("format", [None])[0]
+    if fmt:
+        candidate = f".{fmt.lower()}"
+        if candidate in _MEDIA_EXTENSIONS:
+            return candidate
+    return ""
+
+
+def _url_to_filename(url: str, content_type: str = "") -> str:
     """Generate a deterministic filename from URL: basename-hash8.ext"""
     parsed = urllib.parse.urlparse(url)
     path_part = Path(parsed.path)
 
-    # Get extension
-    ext = path_part.suffix.lower()
-    ext = re.sub(r"\?.*", "", ext)  # strip query leak
-    if ext not in _MEDIA_EXTENSIONS or len(ext) > 6:
+    # Try extension from URL, then content-type, then default
+    ext = _ext_from_url(url)
+    if not ext and content_type:
+        base_ct = content_type.split(";")[0].strip().lower()
+        ext = _CONTENT_TYPE_EXT.get(base_ct, "")
+    if not ext:
         ext = ".jpg"  # safe default
 
     # Get basename (without extension)
@@ -299,9 +328,6 @@ def download_media_in_markdown(markdown: str, output_dir: str) -> str:
         if url in downloaded:
             return downloaded[url]
 
-        filename = _url_to_filename(url)
-        local_path = os.path.join(output_dir, filename)
-
         try:
             resp = requests.get(url, timeout=30, headers={"User-Agent": UA})
             resp.raise_for_status()
@@ -311,6 +337,8 @@ def download_media_in_markdown(markdown: str, output_dir: str) -> str:
                 print(f"  Skipped (HTML response): {url}", file=sys.stderr)
                 downloaded[url] = None
                 return None
+            filename = _url_to_filename(url, content_type)
+            local_path = os.path.join(output_dir, filename)
             with open(local_path, "wb") as f:
                 f.write(resp.content)
             count += 1
