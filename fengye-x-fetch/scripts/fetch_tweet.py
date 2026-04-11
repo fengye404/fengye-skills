@@ -373,9 +373,13 @@ def parse_tweet(tweet: dict, include_article: bool = False) -> dict:
     extended_entities = legacy.get("extended_entities", {})
     for media in extended_entities.get("media", []):
         media_type = media.get("type", "photo")
+        # Always request original quality for photos
+        photo_url = media.get("media_url_https", "")
+        if media_type == "photo" and photo_url and "?" not in photo_url:
+            photo_url = f"{photo_url}?name=orig"
         entry = {
             "type": media_type,
-            "url": media.get("media_url_https", ""),
+            "url": photo_url,
             "alt_text": media.get("ext_alt_text", ""),
         }
         if media_type in ("video", "animated_gif"):
