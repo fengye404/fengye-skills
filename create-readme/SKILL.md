@@ -1,6 +1,6 @@
 ---
 name: create-readme
-description: 'Create a README.md file for the project'
+description: "Create a professional README.md for any project. Use when the user says 'create a readme', 'write a README', 'document this project', 'I need a README', 'generate project docs', or wants to create/improve any README file. Also use when setting up a new open source project, preparing a repo for GitHub, or when the user asks for help describing what their project does."
 ---
 
 ## Role
