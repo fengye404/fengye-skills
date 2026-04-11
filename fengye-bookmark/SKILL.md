@@ -23,37 +23,72 @@ Use this skill when the user wants to:
 ├── saved/             # Markdown files
 │   ├── how-to-build-apis.md
 │   └── understanding-react-hooks.md
-└── assets/            # Downloaded media (images, video, audio)
-    ├── arch-diagram-a3f2b1c9.png
-    └── demo-video-7d4e5f6a.mp4
+└── assets/            # Downloaded media, organized per article
+    ├── how-to-build-apis/
+    │   ├── arch-diagram-a3f2b1c9.png
+    │   └── demo-video-7d4e5f6a.mp4
+    └── understanding-react-hooks/
+        └── hooks-lifecycle-8e2b3a1f.png
 ```
+
+Each article's media is stored in `assets/<article-name>/` where `<article-name>` matches the markdown filename (without `.md`).
 
 **Absolute path:** `/Users/fengye/Documents/bookmarks/`
 
 ## Complete Workflow
 
-### Step 1: Fetch Content (Dual Fetch)
+### Step 1: Check for Duplicates
+
+Read `/Users/fengye/Documents/bookmarks/index.csv` and check if the URL already exists.
+
+If duplicate found:
+- Ask the user: "This URL is already bookmarked as '[title]'. Update it?"
+- If yes, proceed with the same filename from the index
+- If no, abort
+
+### Step 2: Generate Filename
+
+Before fetching, decide the filename based on the URL and page title. You can infer a reasonable name from the URL path, or do a quick lightweight fetch (without `--download-media`) to get the title first.
+
+Rules:
+- At least 3 English words separated by hyphens
+- Based on the article title or URL
+- Lowercase, no special characters
+- Ensure uniqueness (check existing files in `saved/`)
+- The name (without `.md`) will also be the asset subdirectory name
+
+Examples:
+- "How to Build Better APIs" → `how-to-build-better-apis`
+- "Understanding React Hooks" → `understanding-react-hooks`
+- "AI 安全研究进展" → `ai-safety-research-progress`
+
+Create the asset directory:
+```bash
+mkdir -p /Users/fengye/Documents/bookmarks/assets/<article-name>
+```
+
+### Step 3: Fetch Content (Dual Fetch)
 
 Fetch the same URL with **both** fetchers, then compare and pick the more complete result.
 
-#### 1a. Primary fetcher (by URL type)
+#### 3a. Primary fetcher (by URL type)
 
 | URL Pattern | Tool | Command |
 |---|---|---|
-| `x.com/*` or `twitter.com/*` | fengye-x-fetch | `python <skill-path>/scripts/fetch_tweet.py "<url>" --full-article --download-media /Users/fengye/Documents/bookmarks/assets` |
-| Everything else | fengye-markdown-fetch | `python <skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets` |
+| `x.com/*` or `twitter.com/*` | fengye-x-fetch | `python <skill-path>/scripts/fetch_tweet.py "<url>" --full-article --download-media /Users/fengye/Documents/bookmarks/assets/<article-name>` |
+| Everything else | fengye-markdown-fetch | `python <skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets/<article-name>` |
 
-#### 1b. Secondary fetcher (always run)
+#### 3b. Secondary fetcher (always run)
 
 Regardless of URL type, also fetch with fengye-markdown-fetch:
 
 ```bash
-python <fengye-markdown-fetch-skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets
+python <fengye-markdown-fetch-skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets/<article-name>
 ```
 
-> For non-X/Twitter URLs, 1a and 1b use the same tool — no need to run twice.
+> For non-X/Twitter URLs, 3a and 3b use the same tool — no need to run twice.
 
-#### 1c. Compare and choose
+#### 3c. Compare and choose
 
 With both results in hand:
 1. Compare body length, whether a title is present, and image count
@@ -63,35 +98,12 @@ With both results in hand:
 
 **Important:** If the X_AUTH_TOKEN is needed and not set, load it from the environment (`~/.zshrc`) or `~/.env`.
 
-### Step 2: Check for Duplicates
-
-Before saving, read `/Users/fengye/Documents/bookmarks/index.csv` and check if the URL already exists.
-
-If duplicate found:
-- Ask the user: "This URL is already bookmarked as '[title]'. Update it?"
-- If yes, proceed with the same filename from the index
-- If no, abort
-
-### Step 3: Generate Filename
-
-Rules:
-- At least 3 English words separated by hyphens
-- Based on the article title
-- Lowercase, no special characters
-- Ensure uniqueness (check existing files in `saved/`)
-- Add `.md` extension
-
-Examples:
-- "How to Build Better APIs" → `how-to-build-better-apis.md`
-- "Understanding React Hooks" → `understanding-react-hooks.md`
-- "AI 安全研究进展" → `ai-safety-research-progress.md`
-
 ### Step 4: Fix Asset Paths
 
-The `--download-media` flag already downloads media and replaces URLs. But the paths in the output will be absolute (`/Users/fengye/Documents/bookmarks/assets/xxx.png`).
+The `--download-media` flag already downloads media and replaces URLs. But the paths in the output will be absolute (`/Users/fengye/Documents/bookmarks/assets/<article-name>/xxx.png`).
 
 **Replace them with relative paths** for portability:
-- `/Users/fengye/Documents/bookmarks/assets/xxx.png` → `../assets/xxx.png`
+- `/Users/fengye/Documents/bookmarks/assets/<article-name>/xxx.png` → `../assets/<article-name>/xxx.png`
 
 This ensures the markdown renders correctly from the `saved/` directory.
 
@@ -103,11 +115,11 @@ From the fetched content, extract or infer:
 - **Category**: Infer from content. Common categories:
   - Technology, Programming, AI/ML, Design, Business, Science, Personal Development, etc.
   - If uncertain, ask the user
-- **Description**: 1-2 sentence summary of the article's main point
+- **Description**: Short phrase summarizing the article (≤ 50 chars for index)
 
 ### Step 6: Save Markdown File
 
-Save to `/Users/fengye/Documents/bookmarks/saved/[filename].md`:
+Save to `/Users/fengye/Documents/bookmarks/saved/<article-name>.md`:
 
 ```markdown
 ---
@@ -139,6 +151,9 @@ Append a new row to `/Users/fengye/Documents/bookmarks/index.csv`:
 Rules:
 - Quote fields that contain commas
 - `saved-path` is relative: `saved/[filename].md`
+- **`desc` must be ≤ 50 characters** — a short phrase, not a full sentence. Examples:
+  - Good: `Paul Graham on doing great work`
+  - Bad: `Paul Graham's comprehensive essay on doing great work across any field — covering curiosity, originality, morale, and the four-step recipe for meaningful achievement.`
 - If index.csv doesn't exist, create it with a header row first:
   ```
   title,category,url,desc,saved_path
