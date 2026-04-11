@@ -209,10 +209,19 @@ PROVIDER_ORDER = ["jina", "defuddle", "raw"]
 
 # Patterns to match media URLs in Markdown
 _MD_IMAGE_RE = re.compile(r'(!\[[^\]]*\])\((\s*https?://[^)]+)\)')
+_MD_LINK_RE = re.compile(r'(\[[^\]]*\])\((\s*https?://[^)]+)\)')
 _HTML_MEDIA_RE = re.compile(
     r'(<(?:img|video|audio|source)\b[^>]*?\b(?:src|poster)=["\'])(https?://[^"\']+)(["\'])',
     re.IGNORECASE,
 )
+
+# URL patterns that are known media hosts (download even without media extension)
+_KNOWN_MEDIA_HOSTS = {
+    "pbs.twimg.com",
+    "video.twimg.com",
+    "i.imgur.com",
+    "media.giphy.com",
+}
 
 # Extensions considered as media
 _MEDIA_EXTENSIONS = {
@@ -220,6 +229,32 @@ _MEDIA_EXTENSIONS = {
     ".mp4", ".webm", ".mov", ".avi", ".mkv",
     ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a",
 }
+
+
+def _is_media_url(url: str) -> bool:
+    """Check if a URL points to a media file (by extension or known host)."""
+    parsed = urllib.parse.urlparse(url)
+    ext = Path(parsed.path).suffix.lower()
+    if ext in _MEDIA_EXTENSIONS:
+        return True
+    if parsed.hostname in _KNOWN_MEDIA_HOSTS:
+        return True
+    return False
+
+
+def _upgrade_media_url(url: str) -> str:
+    """Upgrade media URLs to get original quality where possible.
+
+    - X/Twitter images: append ?name=orig for full resolution
+    """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.hostname == "pbs.twimg.com" and "/media/" in parsed.path:
+        qs = urllib.parse.parse_qs(parsed.query)
+        if qs.get("name", [None])[0] != "orig":
+            qs["name"] = ["orig"]
+            new_query = urllib.parse.urlencode(qs, doseq=True)
+            return urllib.parse.urlunparse(parsed._replace(query=new_query))
+    return url
 
 
 def _url_to_filename(url: str) -> str:
@@ -260,6 +295,7 @@ def download_media_in_markdown(markdown: str, output_dir: str) -> str:
         """Download a single URL, return local filename or None on failure."""
         nonlocal count
         url = url.strip()
+        url = _upgrade_media_url(url)
         if url in downloaded:
             return downloaded[url]
 
@@ -293,6 +329,14 @@ def download_media_in_markdown(markdown: str, output_dir: str) -> str:
             return f"{prefix}({output_dir}/{filename})"
         return m.group(0)
 
+    def _replace_md_link(m):
+        prefix, url = m.group(1), m.group(2).strip()
+        if _is_media_url(url):
+            filename = _download(url)
+            if filename:
+                return f"{prefix}({output_dir}/{filename})"
+        return m.group(0)
+
     def _replace_html(m):
         prefix, url, suffix = m.group(1), m.group(2), m.group(3)
         filename = _download(url)
@@ -301,6 +345,7 @@ def download_media_in_markdown(markdown: str, output_dir: str) -> str:
         return m.group(0)
 
     result = _MD_IMAGE_RE.sub(_replace_md, markdown)
+    result = _MD_LINK_RE.sub(_replace_md_link, result)
     result = _HTML_MEDIA_RE.sub(_replace_html, result)
 
     print(f"  Media: {count} downloaded, {sum(1 for v in downloaded.values() if v is None)} failed/skipped", file=sys.stderr)
