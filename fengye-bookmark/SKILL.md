@@ -18,7 +18,7 @@ Use this skill when the user wants to:
 ## Storage Layout
 
 ```
-~/Documents/bookmarks/
+~/workspace/blog/bookmarks/
 ├── index.csv          # Title, Category, URL, Description, Saved Path
 ├── articles/          # Markdown files
 │   ├── how-to-build-apis.md
@@ -33,13 +33,13 @@ Use this skill when the user wants to:
 
 Each article's media is stored in `assets/<article-name>/` where `<article-name>` matches the markdown filename (without `.md`).
 
-**Absolute path:** `/Users/fengye/Documents/bookmarks/`
+**Absolute path:** `/Users/fengye/workspace/blog/bookmarks/`
 
 ## Complete Workflow
 
 ### Step 1: Check for Duplicates
 
-Read `/Users/fengye/Documents/bookmarks/index.csv` and check if the URL already exists.
+Read `/Users/fengye/workspace/blog/bookmarks/index.csv` and check if the URL already exists.
 
 If duplicate found:
 - Ask the user: "This URL is already bookmarked as '[title]'. Update it?"
@@ -64,7 +64,7 @@ Examples:
 
 Create the asset directory:
 ```bash
-mkdir -p /Users/fengye/Documents/bookmarks/assets/<article-name>
+mkdir -p /Users/fengye/workspace/blog/bookmarks/assets/<article-name>
 ```
 
 ### Step 3: Fetch Content (Dual Fetch)
@@ -75,15 +75,15 @@ Fetch the same URL with **both** fetchers, then compare and pick the more comple
 
 | URL Pattern | Tool | Command |
 |---|---|---|
-| `x.com/*` or `twitter.com/*` | fengye-x-fetch | `python <skill-path>/scripts/fetch_tweet.py "<url>" --full-article --download-media /Users/fengye/Documents/bookmarks/assets/<article-name>` |
-| Everything else | fengye-markdown-fetch | `python <skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets/<article-name>` |
+| `x.com/*` or `twitter.com/*` | fengye-x-fetch | `python <skill-path>/scripts/fetch_tweet.py "<url>" --full-article --download-media /Users/fengye/workspace/blog/bookmarks/assets/<article-name>` |
+| Everything else | fengye-markdown-fetch | `python <skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/workspace/blog/bookmarks/assets/<article-name>` |
 
 #### 3b. Secondary fetcher (always run)
 
 Regardless of URL type, also fetch with fengye-markdown-fetch:
 
 ```bash
-python <fengye-markdown-fetch-skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/Documents/bookmarks/assets/<article-name>
+python <fengye-markdown-fetch-skill-path>/scripts/fetch_markdown.py "<url>" --download-media /Users/fengye/workspace/blog/bookmarks/assets/<article-name>
 ```
 
 > For non-X/Twitter URLs, 3a and 3b use the same tool — no need to run twice.
@@ -100,10 +100,10 @@ With both results in hand:
 
 ### Step 4: Fix Asset Paths
 
-The `--download-media` flag already downloads media and replaces URLs. But the paths in the output will be absolute (`/Users/fengye/Documents/bookmarks/assets/<article-name>/xxx.png`).
+The `--download-media` flag already downloads media and replaces URLs. But the paths in the output will be absolute (`/Users/fengye/workspace/blog/bookmarks/assets/<article-name>/xxx.png`).
 
 **Replace them with relative paths** for portability:
-- `/Users/fengye/Documents/bookmarks/assets/<article-name>/xxx.png` → `../assets/<article-name>/xxx.png`
+- `/Users/fengye/workspace/blog/bookmarks/assets/<article-name>/xxx.png` → `../assets/<article-name>/xxx.png`
 
 This ensures the markdown renders correctly from the `articles/` directory.
 
@@ -119,7 +119,7 @@ From the fetched content, extract or infer:
 
 ### Step 6: Save Markdown File
 
-Save to `/Users/fengye/Documents/bookmarks/articles/<article-name>.md`:
+Save to `/Users/fengye/workspace/blog/bookmarks/articles/<article-name>.md`:
 
 ```markdown
 ---
@@ -142,7 +142,7 @@ saved_date: [YYYY-MM-DD]
 
 ### Step 7: Update Index
 
-Append a new row to `/Users/fengye/Documents/bookmarks/index.csv`:
+Append a new row to `/Users/fengye/workspace/blog/bookmarks/index.csv`:
 
 ```
 [title],[category],[url],[desc],[saved-path]

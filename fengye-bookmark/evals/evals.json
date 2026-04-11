@@ -6,9 +6,9 @@
       "prompt": "帮我收藏这篇文章 https://www.paulgraham.com/greatwork.html",
       "expectations": [
         "Calls fengye-markdown-fetch with --download-media flag",
-        "Creates a markdown file in ~/Documents/bookmarks/saved/",
+        "Creates a markdown file in ~/workspace/blog/bookmarks/articles/",
         "File has YAML frontmatter with title, url, category, saved_date",
-        "Images are downloaded to ~/Documents/bookmarks/assets/",
+        "Images are downloaded to ~/workspace/blog/bookmarks/assets/",
         "Image paths in markdown are relative (../assets/...)",
         "index.csv is updated with new entry",
         "Success message shows title, category, and saved path"
@@ -19,7 +19,7 @@
       "prompt": "Bookmark this tweet https://x.com/embedmon/status/2042487351608508819",
       "expectations": [
         "Calls fengye-x-fetch (not markdown-fetch) for X URL",
-        "Creates a markdown file in ~/Documents/bookmarks/saved/",
+        "Creates a markdown file in ~/workspace/blog/bookmarks/articles/",
         "File has YAML frontmatter",
         "index.csv is updated",
         "Success message shown"
@@ -29,7 +29,7 @@
       "id": 3,
       "prompt": "Save https://example.com for later",
       "expectations": [
-        "Creates a markdown file in ~/Documents/bookmarks/saved/",
+        "Creates a markdown file in ~/workspace/blog/bookmarks/articles/",
         "Filename uses at least 3 hyphened English words",
         "index.csv is updated with the URL",
         "Success message shown"
