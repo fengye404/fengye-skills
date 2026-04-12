@@ -160,6 +160,9 @@ def fetch_via_raw(url: str, timeout: int = 30) -> dict:
         resp.raise_for_status()
         text = re.sub(r"<[^>]+>", "", resp.text)
         text = re.sub(r"\s+", " ", text).strip()
+        # Detect CSS/JS garbage: if content starts with CSS selectors or JS, discard
+        if re.match(r"^(html|body|\*|\.[\w-]|@media|@charset|@import|/\*|var\s|function\s)", text[:200]):
+            raise ValueError("raw-strip produced CSS/JS garbage, not article content")
         return {
             "provider": "raw-strip",
             "title": "",
@@ -410,8 +413,23 @@ def fetch_auto(url: str, timeout: int = 30) -> dict:
             print(f"  {err['provider']}: {err['error']}", file=sys.stderr)
         sys.exit(1)
 
-    # Pick the best result (longest content)
-    best = max(results, key=lambda r: r["content_length"])
+    def _quality_score(r):
+        """Score result quality: prefer real content over CSS/JS garbage."""
+        content = r.get("content", "")
+        length = r["content_length"]
+        # Penalize content that looks like CSS/JS (high ratio of {, }, ;)
+        if length > 0:
+            garbage_chars = sum(1 for c in content[:2000] if c in '{};\n')
+            garbage_ratio = garbage_chars / min(len(content[:2000]), 1)
+            if garbage_ratio > 0.15:
+                length = length // 10  # Heavy penalty
+        # Bonus for having a meaningful title
+        if r.get("title") and len(r["title"]) > 3:
+            length += 200
+        return length
+
+    # Pick the best result (quality-adjusted score)
+    best = max(results, key=_quality_score)
     return best
 
 
