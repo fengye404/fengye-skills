@@ -255,9 +255,15 @@ class XApiClient:
             "withV2Timeline": True,
         }
 
+        field_toggles = {
+            "withArticleRichContentState": True,
+            "withArticlePlainText": True,
+        }
+
         params = {
             "variables": json.dumps(variables, separators=(",", ":")),
             "features": json.dumps(TWEET_DETAIL_FEATURES, separators=(",", ":")),
+            "fieldToggles": json.dumps(field_toggles, separators=(",", ":")),
         }
 
         url = f"{GRAPHQL_BASE}/{self.query_ids['TweetDetail']}/TweetDetail"
@@ -405,6 +411,23 @@ def parse_tweet(tweet: dict, include_article: bool = False) -> dict:
     # Remove trailing media t.co links
     text = re.sub(r"\s*https://t\.co/\w+$", "", text)
 
+    # ── X Article (standalone long-form content) ──
+    article_data = tweet.get("article", {}).get("article_results", {}).get("result", {})
+    x_article = None
+    if article_data and include_article:
+        x_article = {
+            "title": article_data.get("title", ""),
+            "plain_text": article_data.get("plain_text", ""),
+            "preview_text": article_data.get("preview_text", ""),
+            "media": [],
+        }
+        for me in article_data.get("media_entities", []):
+            mi = me.get("media_info", {})
+            if mi.get("__typename") == "ApiImage":
+                img_url = mi.get("original_img_url", "")
+                if img_url:
+                    x_article["media"].append({"type": "photo", "url": img_url, "alt_text": ""})
+
     # ── Quoted tweet ──
     quoted = None
     quoted_result = tweet.get("quoted_status_result", {}).get("result", {})
@@ -430,6 +453,7 @@ def parse_tweet(tweet: dict, include_article: bool = False) -> dict:
         "reply_count": legacy.get("reply_count", 0),
         "bookmark_count": legacy.get("bookmark_count", 0),
         "is_article": bool(note_tweet),
+        "x_article": x_article,
         "lang": legacy.get("lang", ""),
     }
 
@@ -536,6 +560,19 @@ def tweet_to_markdown(parsed: dict, thread: Optional[List[dict]] = None, include
             label = "GIF" if media["type"] == "animated_gif" else "Video"
             lines.append(f"[{label}]({video_url})")
         lines.append("")
+
+    # X Article (standalone long-form content)
+    if parsed.get("x_article") and include_article:
+        xa = parsed["x_article"]
+        lines.append("---")
+        lines.append("")
+        lines.append(f"## {xa['title']}")
+        lines.append("")
+        lines.append(xa["plain_text"])
+        lines.append("")
+        for media in xa["media"]:
+            lines.append(f"![image]({media['url']})")
+            lines.append("")
 
     # Quoted tweet
     if parsed["quoted_tweet"]:
