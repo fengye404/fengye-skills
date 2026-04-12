@@ -415,18 +415,27 @@ def parse_tweet(tweet: dict, include_article: bool = False) -> dict:
     article_data = tweet.get("article", {}).get("article_results", {}).get("result", {})
     x_article = None
     if article_data and include_article:
-        x_article = {
-            "title": article_data.get("title", ""),
-            "plain_text": article_data.get("plain_text", ""),
-            "preview_text": article_data.get("preview_text", ""),
-            "media": [],
-        }
+        # Build mediaId → URL mapping
+        media_id_to_url = {}
+        media_list_article = []
         for me in article_data.get("media_entities", []):
             mi = me.get("media_info", {})
             if mi.get("__typename") == "ApiImage":
                 img_url = mi.get("original_img_url", "")
+                mid = str(me.get("media_id", ""))
                 if img_url:
-                    x_article["media"].append({"type": "photo", "url": img_url, "alt_text": ""})
+                    media_list_article.append({"type": "photo", "url": img_url, "alt_text": ""})
+                    if mid:
+                        media_id_to_url[mid] = img_url
+
+        x_article = {
+            "title": article_data.get("title", ""),
+            "plain_text": article_data.get("plain_text", ""),
+            "preview_text": article_data.get("preview_text", ""),
+            "media": media_list_article,
+            "content_state": article_data.get("content_state", None),
+            "media_id_to_url": media_id_to_url,
+        }
 
     # ── Quoted tweet ──
     quoted = None
@@ -499,6 +508,248 @@ def find_thread_tweets(data: dict, tweet_id: str, author_screen_name: str) -> Li
     return thread
 
 
+# ── Draft.js Content State Renderer ────────────────────────────────────────────
+
+def _apply_block_formatting(text: str, inline_style_ranges: list,
+                            entity_ranges: list, entity_by_key: dict) -> str:
+    """Apply inline styles and entity links to a Draft.js block's text.
+
+    All operations use original text offsets and are applied from end to start.
+    Links are prioritized: inline styles that fully overlap a link range
+    wrap the link in markdown syntax.
+    entity_by_key: dict mapping string key → entity object.
+    """
+    if not text:
+        return text
+    from collections import defaultdict
+
+    # Collect link operations from entity_ranges
+    link_ops = {}  # (offset, end) → url
+    for er in (entity_ranges or []):
+        key = str(er.get("key", ""))
+        offset = er.get("offset", 0)
+        length = er.get("length", 0)
+        entity = entity_by_key.get(key)
+        if entity:
+            etype = entity.get("value", {}).get("type", entity.get("type", ""))
+            edata = entity.get("value", {}).get("data", entity.get("data", {}))
+            if etype == "LINK" and "url" in edata:
+                link_ops[(offset, offset + length)] = edata["url"]
+
+    # Collect style operations — group by (offset, end) → set of styles
+    style_groups = defaultdict(set)
+    for sr in (inline_style_ranges or []):
+        offset = sr.get("offset", 0)
+        length = sr.get("length", 0)
+        style = sr.get("style", "")
+        style_groups[(offset, offset + length)].add(style)
+
+    # Build combined operations — sort by offset descending to preserve offsets
+    ops = []  # (offset, end, op_type, data)
+    # Links first — these replace text with [text](url)
+    for (start, end), url in link_ops.items():
+        ops.append((start, end, "link", url))
+
+    # Styles — skip ranges fully inside a link (they'll be applied to the link text)
+    for (start, end), styles in style_groups.items():
+        # Check if this style range exactly matches or fully contains a link
+        has_link_inside = any(
+            ls <= start and le >= end or ls >= start and le <= end
+            for (ls, le) in link_ops
+        )
+        if "Bold" in styles and "Italic" in styles:
+            ops.append((start, end, "bold_italic", None))
+        elif "Bold" in styles:
+            ops.append((start, end, "bold", None))
+        elif "Italic" in styles:
+            ops.append((start, end, "italic", None))
+
+    # Sort: offset descending, then style ops before link ops at same offset
+    # This way: first we apply the link (innermost), then wrap with style (outermost)
+    def sort_key(op):
+        start, end, op_type, data = op
+        # Higher offset first; at same offset, links first (they're inner)
+        type_order = 0 if op_type == "link" else 1
+        return (-start, type_order)
+
+    ops.sort(key=sort_key)
+
+    # Apply operations. Process from end to start.
+    # When a style overlaps with a link at same range, apply link first, then style wraps it.
+    applied_links = set()  # Track which ranges became links
+
+    for start, end, op_type, data in ops:
+        if end > len(text):
+            continue
+        segment = text[start:end]
+
+        if op_type == "link":
+            text = text[:start] + f"[{segment}]({data})" + text[end:]
+            applied_links.add((start, end))
+        elif op_type in ("bold", "italic", "bold_italic"):
+            # If a link was already applied at this range, segment now includes [text](url)
+            # Re-extract the current segment
+            # Calculate actual end position accounting for any link expansion
+            actual_segment = text[start:start + len(text) - (len(text) - end)]
+            # Actually, since we process from end, if we already applied a link at the
+            # same or overlapping range, the text has shifted. Just re-extract.
+            # For styles that exactly match a link range, the segment now contains [text](url)
+            if (start, end) in applied_links:
+                # The link was applied, so text between start and end is now different
+                # Find the actual end by searching for the end of the link
+                # Simple approach: look for ](url) after start
+                link_url = link_ops.get((start, end), "")
+                link_end_marker = f"]({link_url})"
+                marker_pos = text.find(link_end_marker, start)
+                if marker_pos >= 0:
+                    actual_end = marker_pos + len(link_end_marker)
+                    segment = text[start:actual_end]
+                else:
+                    segment = text[start:end]
+                    actual_end = end
+            else:
+                actual_end = end
+                segment = text[start:actual_end]
+
+            if op_type == "bold_italic":
+                text = text[:start] + f"***{segment}***" + text[actual_end:]
+            elif op_type == "bold":
+                text = text[:start] + f"**{segment}**" + text[actual_end:]
+            elif op_type == "italic":
+                text = text[:start] + f"*{segment}*" + text[actual_end:]
+
+    return text
+
+
+
+def _render_draftjs_article(x_article: dict) -> str:
+    """Render X Article content_state (Draft.js) to Markdown with images inline."""
+    cs = x_article.get("content_state")
+    media_id_to_url = x_article.get("media_id_to_url", {})
+
+    if not cs:
+        # Fallback to plain_text + images at end
+        return None
+
+    if isinstance(cs, str):
+        cs = json.loads(cs)
+
+    blocks = cs.get("blocks", [])
+    raw_entity_map = cs.get("entityMap", [])
+
+    # Build key → entity dict. entityMap can be a list of {key, value} or a dict.
+    entity_by_key = {}
+    if isinstance(raw_entity_map, list):
+        for item in raw_entity_map:
+            k = str(item.get("key", ""))
+            entity_by_key[k] = item
+    elif isinstance(raw_entity_map, dict):
+        for k, v in raw_entity_map.items():
+            entity_by_key[str(k)] = v
+
+    lines = []
+    prev_was_list = False
+
+    for block in blocks:
+        btype = block.get("type", "unstyled")
+        text = block.get("text", "")
+        entity_ranges = block.get("entityRanges", [])
+        inline_styles = block.get("inlineStyleRanges", [])
+
+        if btype == "atomic":
+            # Image or media block — look up entity by key
+            if entity_ranges:
+                key = str(entity_ranges[0].get("key", ""))
+                entity = entity_by_key.get(key)
+                if entity:
+                    edata = entity.get("value", {}).get("data", entity.get("data", {}))
+                    media_items = edata.get("mediaItems", [])
+                    if media_items:
+                        media_id = str(media_items[0].get("mediaId", ""))
+                        img_url = media_id_to_url.get(media_id, "")
+                        if img_url:
+                            if prev_was_list:
+                                lines.append("")
+                                prev_was_list = False
+                            lines.append(f"![image]({img_url})")
+                            lines.append("")
+                            continue
+                    # Could be a link entity in atomic block (rare)
+                    url = edata.get("url", "")
+                    if url:
+                        lines.append(f"[{url}]({url})")
+                        lines.append("")
+                        continue
+            # Skip empty atomic blocks we can't resolve
+            continue
+
+        elif btype == "header-one":
+            if prev_was_list:
+                lines.append("")
+                prev_was_list = False
+            styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+            lines.append(f"# {styled}")
+            lines.append("")
+
+        elif btype == "header-two":
+            if prev_was_list:
+                lines.append("")
+                prev_was_list = False
+            styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+            lines.append(f"## {styled}")
+            lines.append("")
+
+        elif btype == "header-three":
+            if prev_was_list:
+                lines.append("")
+                prev_was_list = False
+            styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+            lines.append(f"### {styled}")
+            lines.append("")
+
+        elif btype == "unordered-list-item":
+            styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+            lines.append(f"- {styled}")
+            prev_was_list = True
+
+        elif btype == "ordered-list-item":
+            styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+            lines.append(f"1. {styled}")
+            prev_was_list = True
+
+        elif btype == "blockquote":
+            if prev_was_list:
+                lines.append("")
+                prev_was_list = False
+            styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+            lines.append(f"> {styled}")
+            lines.append("")
+
+        elif btype == "code-block":
+            if prev_was_list:
+                lines.append("")
+                prev_was_list = False
+            lines.append("```")
+            lines.append(text)
+            lines.append("```")
+            lines.append("")
+
+        else:
+            # unstyled — regular paragraph
+            if prev_was_list:
+                lines.append("")
+                prev_was_list = False
+            if text.strip():
+                styled = _apply_block_formatting(text, inline_styles, entity_ranges, entity_by_key)
+                lines.append(styled)
+                lines.append("")
+            else:
+                # Empty paragraph
+                lines.append("")
+
+    return "\n".join(lines)
+
+
 # ── Markdown Formatter ─────────────────────────────────────────────────────────
 
 def tweet_to_markdown(parsed: dict, thread: Optional[List[dict]] = None, include_article: bool = False) -> str:
@@ -568,11 +819,18 @@ def tweet_to_markdown(parsed: dict, thread: Optional[List[dict]] = None, include
         lines.append("")
         lines.append(f"## {xa['title']}")
         lines.append("")
-        lines.append(xa["plain_text"])
-        lines.append("")
-        for media in xa["media"]:
-            lines.append(f"![image]({media['url']})")
+
+        # Try rendering with content_state (Draft.js) for proper image placement
+        rendered = _render_draftjs_article(xa)
+        if rendered:
+            lines.append(rendered)
+        else:
+            # Fallback: plain_text + images at end
+            lines.append(xa["plain_text"])
             lines.append("")
+            for media in xa["media"]:
+                lines.append(f"![image]({media['url']})")
+                lines.append("")
 
     # Quoted tweet
     if parsed["quoted_tweet"]:
