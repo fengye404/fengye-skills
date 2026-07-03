@@ -190,6 +190,47 @@ icacls "C:\ProgramData\ssh\administrators_authorized_keys" /grant "NT AUTHORITY\
 Restart-Service sshd
 ```
 
+## 已确认的 Windows 侧 key 配置记录
+
+2026-07-04，Windows 侧 Codex 已完成并确认：
+
+- 公钥已经写入当前用户文件：
+  ```text
+  C:\Users\11291\.ssh\authorized_keys
+  ```
+- 因为 Windows OpenSSH 配置里存在：
+  ```text
+  Match Group administrators
+  AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys
+  ```
+  所以同一把公钥也已经写入管理员专用文件：
+  ```text
+  C:\ProgramData\ssh\administrators_authorized_keys
+  ```
+- `administrators_authorized_keys` 权限已经设置为：
+  ```text
+  NT AUTHORITY\SYSTEM:(F)
+  BUILTIN\Administrators:(F)
+  ```
+- `sshd` 已重启，并确认状态：
+  ```text
+  sshd Running Automatic
+  0.0.0.0:22 Listen
+  ::22 Listen
+  ```
+
+Mac 侧验证命令：
+
+```bash
+ssh summerpc hostname
+```
+
+如果成功，日常连接命令就是：
+
+```bash
+ssh summerpc
+```
+
 ## WSL 和 GPU 检查
 
 通过 SSH 运行：
