@@ -1,49 +1,49 @@
 ---
 name: fengye-remote-gpu
-description: "Set up, verify, and troubleshoot Fengye's LAN Windows/WSL2 NVIDIA GPU training machine from a Mac or another local computer. Use this when the user wants to SSH into summerPC, configure Windows OpenSSH, fix LAN SSH timeouts, set up SSH keys, check WSL2 Ubuntu, verify NVIDIA GPU visibility, prepare a PyTorch/CUDA training environment, or document the local remote-GPU workflow."
+description: "配置、验证和排查 fengye 的局域网 Windows/WSL2/NVIDIA GPU 训练机。用户想从 Mac SSH 到 summerPC、配置 Windows OpenSSH、修复局域网 SSH 超时、配置 SSH key、检查 WSL2 Ubuntu、验证 NVIDIA GPU、准备 PyTorch/CUDA 训练环境、或沉淀本地远程 GPU 工作流时使用。"
 ---
 
 # fengye-remote-gpu
 
-Help Fengye use a Windows + WSL2 + NVIDIA GPU desktop as a local LAN training machine from a Mac or another computer.
+帮助 fengye 把一台 Windows + WSL2 + NVIDIA GPU 台式机当成本地局域网训练机使用，并从 Mac 或其它本地电脑远程连接。
 
-This skill is for environment setup and operational checks, not for solving course assignments. It is especially useful for CS336 study infrastructure, where the GPU box can run heavier PyTorch experiments later.
+这个 skill 只处理环境配置和运行检查，不用于完成课程作业。它尤其适合 CS336 学习基础设施：后面需要更重的 PyTorch 实验时，可以把训练任务放到这台 GPU 机器上跑。
 
-## Known Current Setup
+## 当前已知配置
 
-As of 2026-07-04, the working machine is:
+截至 2026-07-04，已经打通的配置是：
 
-- Windows host: `summerPC`
-- Windows user: `summerpc\11291`
-- LAN IPv4: `192.168.31.234`
-- Mac SSH alias: `summerpc`
-- Mac SSH private key: `~/.ssh/summerpc_cs336_ed25519`
-- Mac SSH public key: `~/.ssh/summerpc_cs336_ed25519.pub`
-- WSL distro: `Ubuntu`
-- WSL version: WSL2, Ubuntu 24.04.1 LTS
-- GPU: NVIDIA GeForce RTX 4080 SUPER, 16376 MiB
-- Verified remote GPU command:
+- Windows 主机名：`summerPC`
+- Windows 用户：`summerpc\11291`
+- 局域网 IPv4：`192.168.31.234`
+- Mac 侧 SSH 别名：`summerpc`
+- Mac 侧 SSH 私钥：`~/.ssh/summerpc_cs336_ed25519`
+- Mac 侧 SSH 公钥：`~/.ssh/summerpc_cs336_ed25519.pub`
+- WSL 发行版：`Ubuntu`
+- WSL 版本：WSL2，Ubuntu 24.04.1 LTS
+- GPU：NVIDIA GeForce RTX 4080 SUPER，16376 MiB
+- 已验证的远程 GPU 检查命令：
   ```bash
   ssh summerpc "wsl -d Ubuntu -e /usr/lib/wsl/lib/nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader"
   ```
 
-Expected verified output shape:
+预期输出形态：
 
 ```text
 NVIDIA GeForce RTX 4080 SUPER, <driver_version>, 16376 MiB
 ```
 
-## Safety Rules
+## 安全规则
 
-- Do not reveal or print private key contents. Public keys are okay to display when installing them.
-- Prefer non-destructive checks before making changes.
-- Prefer router DHCP reservation for a stable LAN IPv4 address. Do not change Windows static IP unless the user explicitly wants that.
-- Do not reinstall WSL, NVIDIA drivers, CUDA, or large packages unless the user explicitly asks.
-- If the task is for a course repository, keep environment setup separate from assignment implementation.
+- 不要展示或打印私钥内容。公钥可以在安装时展示。
+- 修改配置前优先做非破坏性检查。
+- 固定局域网 IP 时优先使用路由器 DHCP 地址保留。除非用户明确要求，不要直接修改 Windows 静态 IP。
+- 除非用户明确要求，不要重装 WSL、NVIDIA 驱动、CUDA 或大型依赖。
+- 如果当前上下文是课程仓库，把环境配置和 assignment 实现严格分开。
 
-## Fast Status Check From Mac
+## Mac 侧快速检查
 
-Run these from the Mac or local control machine:
+从 Mac 或本地控制机运行：
 
 ```bash
 ping -c 2 192.168.31.234
@@ -54,17 +54,17 @@ ssh -o BatchMode=yes summerpc "wsl -d Ubuntu -e uname -a"
 ssh -o BatchMode=yes summerpc "wsl -d Ubuntu -e /usr/lib/wsl/lib/nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader"
 ```
 
-Interpretation:
+结果判断：
 
-- `ping` fails: check LAN, IP address, Wi-Fi/Ethernet, router isolation, or whether the desktop is asleep.
-- `ping` works but `nc` times out: Windows firewall/profile/third-party security software is likely blocking TCP 22.
-- `nc` works but `ssh` says `Permission denied`: network is fine; fix password/key authentication.
-- `ssh summerpc hostname` works: SSH key login is ready.
-- WSL `uname` works but `nvidia-smi` fails by name: try `/usr/lib/wsl/lib/nvidia-smi`; non-interactive WSL PATH may not include it.
+- `ping` 失败：检查局域网、IP 地址、Wi-Fi/以太网、路由器隔离，或者台式机是否睡眠。
+- `ping` 成功但 `nc` 超时：通常是 Windows 防火墙 profile、第三方安全软件，或 TCP 22 入站被拦。
+- `nc` 成功但 `ssh` 返回 `Permission denied`：网络已经通了，问题在密码或 key 认证。
+- `ssh summerpc hostname` 成功：SSH key 免密登录已经可用。
+- WSL 的 `uname` 成功但普通 `nvidia-smi` 失败：尝试 `/usr/lib/wsl/lib/nvidia-smi`。非交互 WSL 命令的 PATH 里可能没有 `nvidia-smi`。
 
-## Mac SSH Configuration
+## Mac 侧 SSH 配置
 
-The working SSH alias should look like this in `~/.ssh/config`:
+`~/.ssh/config` 里应该有这个别名：
 
 ```sshconfig
 Host summerpc
@@ -74,7 +74,7 @@ Host summerpc
   IdentitiesOnly yes
 ```
 
-If the key does not exist, create a dedicated one:
+如果 key 不存在，创建一把专用 key：
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/summerpc_cs336_ed25519 -C "fengye@mac-to-summerpc-cs336" -N ""
@@ -82,11 +82,11 @@ chmod 600 ~/.ssh/summerpc_cs336_ed25519 ~/.ssh/config
 chmod 644 ~/.ssh/summerpc_cs336_ed25519.pub
 ```
 
-Then install the public key on Windows.
+然后把公钥安装到 Windows。
 
-## Windows OpenSSH Checklist
+## Windows OpenSSH 检查清单
 
-Run from an administrator PowerShell on Windows when configuring or debugging:
+在 Windows 的管理员 PowerShell 里运行：
 
 ```powershell
 Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*'
@@ -99,7 +99,7 @@ Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP*" | Get-NetFirewallPortFilter
 Get-NetConnectionProfile
 ```
 
-If OpenSSH Server is missing:
+如果 OpenSSH Server 没安装：
 
 ```powershell
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
@@ -107,57 +107,57 @@ Start-Service sshd
 Set-Service -Name sshd -StartupType Automatic
 ```
 
-## Firewall Fix For Public Networks
+## Public 网络下的防火墙修复
 
-The actual issue found on 2026-07-04:
+2026-07-04 实际遇到的问题：
 
-- Windows network `fengye404` was categorized as `Public`
-- Existing rule `OpenSSH-Server-In-TCP` only allowed `Private`
-- Mac could ping Windows but TCP 22 timed out
+- Windows 当前网络 `fengye404` 被识别成 `Public`
+- 已有规则 `OpenSSH-Server-In-TCP` 只允许 `Private`
+- Mac 可以 ping 到 Windows，但 TCP 22 超时
 
-Two valid fixes:
+两个有效修法：
 
-Option A, if the LAN is trusted, change the network to Private:
+方案 A：如果这是可信局域网，把网络改成 Private：
 
 ```powershell
 Set-NetConnectionProfile -Name "fengye404" -NetworkCategory Private
 ```
 
-Option B, add an explicit SSH rule for any profile:
+方案 B：新增一条对任意 profile 生效的 SSH 放行规则：
 
 ```powershell
 New-NetFirewallRule -Name "OpenSSH-Server-In-TCP-Any" -DisplayName "OpenSSH Server TCP 22 Any Profile" -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -Profile Any
 ```
 
-Verify:
+验证：
 
 ```powershell
 Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP*" | Format-Table Name,Enabled,Direction,Action,Profile -AutoSize
 Get-NetFirewallRule -Name "OpenSSH-Server-In-TCP*" | Get-NetFirewallPortFilter
 ```
 
-## Install The Mac Public Key On Windows
+## 在 Windows 上安装 Mac 公钥
 
-For a normal Windows user, write to:
+普通 Windows 用户的 key 文件：
 
 ```text
 C:\Users\11291\.ssh\authorized_keys
 ```
 
-If the Windows OpenSSH config contains:
+如果 Windows OpenSSH 配置里有：
 
 ```text
 Match Group administrators
 AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys
 ```
 
-also write the same public key to:
+还要把同一把公钥写入：
 
 ```text
 C:\ProgramData\ssh\administrators_authorized_keys
 ```
 
-PowerShell helper for the normal user file:
+普通用户文件的 PowerShell 辅助脚本：
 
 ```powershell
 $pub = '<paste public key here>'
@@ -182,7 +182,7 @@ icacls $authFile /grant "$($me):F" | Out-Null
 Restart-Service sshd
 ```
 
-For `administrators_authorized_keys`, set tight permissions:
+`administrators_authorized_keys` 要设置严格权限：
 
 ```powershell
 icacls "C:\ProgramData\ssh\administrators_authorized_keys" /inheritance:r
@@ -190,9 +190,9 @@ icacls "C:\ProgramData\ssh\administrators_authorized_keys" /grant "NT AUTHORITY\
 Restart-Service sshd
 ```
 
-## WSL And GPU Checks
+## WSL 和 GPU 检查
 
-Run through SSH:
+通过 SSH 运行：
 
 ```bash
 ssh summerpc "wsl -l -v"
@@ -200,7 +200,7 @@ ssh summerpc "wsl -d Ubuntu -e cat /etc/os-release"
 ssh summerpc "wsl -d Ubuntu -e /usr/lib/wsl/lib/nvidia-smi"
 ```
 
-Tool checks inside WSL:
+检查 WSL 内工具：
 
 ```bash
 ssh summerpc "wsl -d Ubuntu -e python3 --version"
@@ -210,42 +210,42 @@ ssh summerpc "wsl -d Ubuntu -e nvcc --version"
 ssh summerpc "wsl -d Ubuntu -e python3 -c \"import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no cuda')\""
 ```
 
-Known state on 2026-07-04:
+2026-07-04 的已知状态：
 
-- `python3`: installed
-- `pip3`: installed
-- `git`: installed
-- `nvcc`: installed, CUDA compiler release 12.0
-- `uv`: not installed
-- `conda`: not installed
-- `torch`: not installed yet
+- `python3`：已安装
+- `pip3`：已安装
+- `git`：已安装
+- `nvcc`：已安装，CUDA compiler release 12.0
+- `uv`：未安装
+- `conda`：未安装
+- `torch`：未安装
 
-## Recommended Next Step For PyTorch Work
+## 后续 PyTorch 环境建议
 
-When the user is ready to run CS336 experiments on the GPU box, set up an isolated environment inside WSL Ubuntu. Prefer a project-local `venv` or `uv` environment. Do not install PyTorch globally unless the user explicitly prefers that.
+用户准备在 GPU 机器上跑 CS336 实验时，在 WSL Ubuntu 里创建隔离环境。优先使用项目本地 `venv` 或 `uv` 环境。除非用户明确偏好，不要把 PyTorch 全局安装到系统 Python。
 
-Before installing PyTorch, check the current official install selector because PyTorch/CUDA package recommendations change over time.
+安装 PyTorch 前，先查看官方安装选择器，因为 PyTorch/CUDA 包推荐会变化。
 
-## Summary Template
+## 汇报模板
 
-When reporting status, use this shape:
+汇报状态时使用这个结构：
 
 ```text
 SSH:
-- LAN reachability:
+- 局域网可达:
 - TCP 22:
-- Key login:
+- key 免密:
 
 Windows:
-- Host/user:
+- 主机/用户:
 - sshd:
-- firewall rule:
+- 防火墙规则:
 
 WSL/GPU:
-- distro:
-- GPU visible:
+- 发行版:
+- GPU 可见:
 - PyTorch CUDA:
 
-Next:
+下一步:
 - ...
 ```
