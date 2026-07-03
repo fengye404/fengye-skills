@@ -67,6 +67,7 @@ git config branch.main.syncCommitMsg "auto-sync from $(scutil --get ComputerName
 | **create-readme** | 自动生成项目 README |
 | **fengye-blog-style** | fengye404.top 博客写作风格（个人定制化） |
 | **fengye-markdown-fetch** | 多源网页转 Markdown（Jina Reader / Defuddle / Raw） |
+| **fengye-remote-gpu** | 局域网 Windows/WSL2/NVIDIA GPU 训练机的 SSH、GPU 检查与故障排查 |
 | **fengye-x-fetch** | 抓取 X/Twitter 推文并转为 Markdown（GraphQL API） |
 | **find-skills** | 从 skills.sh 生态发现和安装 skills |
 | **frontend-design** | mager 风格的前端设计指导 |
