@@ -63,6 +63,7 @@ git config branch.main.syncCommitMsg "auto-sync from $(scutil --get ComputerName
 |-------|------|
 | **agent-browser** | 浏览器自动化 CLI，用于网页交互、数据提取等 |
 | **autoresearch** | 基于 Karpathy 方法论的 skill 自动优化工具 |
+| **baoyu-design** | 本地生成高质量 UI、交互原型、设计系统与演示文稿 |
 | **copywriting** | 营销文案撰写和优化 |
 | **create-readme** | 自动生成项目 README |
 | **fengye-blog-style** | fengye404.top 博客写作风格（个人定制化） |
@@ -174,6 +175,7 @@ fengye-skills/
 ├── AGENTS.md              # Agent 工作规范
 ├── agent-browser/         # 浏览器自动化
 ├── autoresearch/          # Skill 自动优化
+├── baoyu-design/          # UI、交互原型与设计系统
 ├── copywriting/           # 文案撰写
 ├── create-readme/         # README 生成
 ├── fengye-blog-style/     # 个人博客风格
