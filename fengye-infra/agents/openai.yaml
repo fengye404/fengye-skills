@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fengye Infra"
+  short_description: "维护并同步 Fengye 的个人数字基础设施"
+  default_prompt: "Use $fengye-infra to inspect, operate, and document my personal digital infrastructure."

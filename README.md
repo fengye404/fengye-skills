@@ -67,6 +67,7 @@ git config branch.main.syncCommitMsg "auto-sync from $(scutil --get ComputerName
 | **copywriting** | 营销文案撰写和优化 |
 | **create-readme** | 自动生成项目 README |
 | **fengye-blog-style** | fengye404.top 博客写作风格（个人定制化） |
+| **fengye-infra** | 个人数字基础设施的运维、排障与运行手册同步 |
 | **fengye-markdown-fetch** | 多源网页转 Markdown（Jina Reader / Defuddle / Raw） |
 | **fengye-remote-gpu** | 局域网 Windows/WSL2/NVIDIA GPU 训练机的 SSH、GPU 检查与故障排查 |
 | **fengye-x-fetch** | 抓取 X/Twitter 推文并转为 Markdown（GraphQL API） |
@@ -179,6 +180,7 @@ fengye-skills/
 ├── copywriting/           # 文案撰写
 ├── create-readme/         # README 生成
 ├── fengye-blog-style/     # 个人博客风格
+├── fengye-infra/          # 个人数字基础设施运维与文档同步
 ├── find-skills/           # Skill 发现
 ├── frontend-design/       # 前端设计
 ├── macos-design-guidelines/ # macOS 设计规范
