@@ -44,6 +44,20 @@ It's OK to briefly explain terms if you're in doubt, and feel free to clarify te
 
 ## Creating a skill
 
+### Fengye Personal Skill Repository
+
+For Fengye's personal skills, treat `${FENGYE_SKILLS_REPO:-$HOME/workspace/fengye-skills}` as the single source of truth. This repository policy applies even when the captured workflow or its supporting documentation lives in another project.
+
+Before creating, moving, or updating a personal skill:
+
+1. Resolve the canonical repository and read its `README.md` and `AGENTS.md` completely.
+2. Inspect `git status` and preserve unrelated work.
+3. Create or edit the real skill directory in the canonical repository, not in a consuming project's repository and not directly inside an AI tool's installed skills directory.
+4. Keep domain data, runbooks, and project artifacts in their appropriate repositories; have the skill reference those sources instead of duplicating the skill there.
+5. After validation, follow the repository workflow exactly. For the current repository this means running `./install.sh` and then `./git-sync`, while ensuring unrelated untracked files are not accidentally committed.
+
+If the canonical repository is unavailable or its synchronization is blocked, preserve the completed work locally and report the unsynchronized state rather than silently creating a second source of truth.
+
 ### Capture Intent
 
 Start by understanding the user's intent. The current conversation might already contain a workflow the user wants to capture (e.g., they say "turn this into a skill"). If so, extract answers from the conversation history first — the tools used, the sequence of steps, corrections the user made, input/output formats observed. The user may need to fill the gaps, and should confirm before proceeding to the next step.

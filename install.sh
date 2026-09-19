@@ -16,7 +16,13 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 获取所有 skill 目录
 get_skills() {
-  ls -d "$REPO_DIR"/*/ 2>/dev/null | xargs -n1 basename | grep -v "\.git"
+  local dir
+  for dir in "$REPO_DIR"/*/; do
+    [ -d "$dir" ] || continue
+    if [ -f "$dir/SKILL.md" ] || [ -f "$dir/CLAUDE.md" ]; then
+      basename "$dir"
+    fi
+  done
 }
 
 # 创建软链接的通用函数
@@ -190,7 +196,8 @@ list_skills() {
     local claude_file="$REPO_DIR/$skill/CLAUDE.md"
 
     if [ -f "$skill_file" ]; then
-      local desc=$(grep -m1 "^description:" "$skill_file" 2>/dev/null | cut -d: -f2- | xargs)
+      local desc
+      desc=$(grep -m1 "^description:" "$skill_file" 2>/dev/null | cut -d: -f2- | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
       echo -e "${GREEN}•${NC} $skill${desc:+ - $desc}"
     elif [ -f "$claude_file" ]; then
       local title=$(grep -m1 "^# " "$claude_file" 2>/dev/null | cut -d' ' -f2-)
