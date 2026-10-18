@@ -68,7 +68,7 @@ When a task produces durable personal-infrastructure information, update the run
 - installed or removed infrastructure software and external dependencies;
 - configuration files or commands needed to reproduce or roll back a setup.
 
-Update the relevant runbook's verification date and record the result, important paths, validation, and rollback boundary. Add sanitized configuration copies under `configs/` when they materially aid recovery. Update the overview when roles, entry points, providers, or architecture change. If a new infrastructure category has no runbook yet, create an appropriately named runbook rather than forcing it into an unrelated machine document.
+Reconcile the relevant runbook in place with the result, important paths, validation, and rollback boundary. Date only the facts actually checked; a documentation edit is not a fresh verification of the entire system. Add sanitized configuration copies under `configs/` when they materially aid recovery. Update the overview when roles, entry points, providers, or architecture change. If a new infrastructure category has no runbook yet, create an appropriately named runbook rather than forcing it into an unrelated machine document.
 
 Then synchronize the private repository:
 
@@ -79,6 +79,17 @@ Then synchronize the private repository:
 5. If authentication, conflicts, or remote availability prevent pushing, keep the local commit and clearly report what remains unsynchronized.
 
 Documentation synchronization is expected for completed infrastructure work, but it does not grant permission for unrelated live-system changes.
+
+## Keep Documentation Current
+
+Maintain operating guidance, not an append-only conversation log. On every infrastructure task, tidy the sections you touch; perform a broader sweep when requested.
+
+- Keep one canonical current statement per fact. Replace superseded setup steps, pending tasks and decisions; update affected indexes and cross-references rather than appending a contradictory “latest update”.
+- Main runbooks retain current roles, entry points, essential configuration, operating constraints, diagnosis, backup and recovery. Put detailed timelines, resolved incidents and old measurements in `history/` with a warning and a link back to current guidance; link the archive from the main runbook. Never archive secrets.
+- Resolve conflicts using live read-only evidence where available. Separate observed, configured, user-reported and reboot-tested facts with scoped dates. Correct disproven claims; label unverifiable facts and open questions explicitly instead of silently upgrading old notes to truth.
+- Temporary experiments include their authoritative plan/data paths, end conditions and cleanup boundaries. Do not describe planned cleanup as completed or remove permanent services along with temporary jobs.
+- Keep summaries short and task-oriented; avoid repeated status dumps, transient PIDs, transcripts and duplicate configuration. Preserve recovery commands and security invariants even when shortening prose. Keep machine-specific facts in runbooks, not this Skill.
+- Before syncing, review the full diff, check internal links and contradictory/stale instructions, and preserve unrelated edits. Documentation cleanup alone never authorizes live service changes.
 
 ## Secret Boundary
 
