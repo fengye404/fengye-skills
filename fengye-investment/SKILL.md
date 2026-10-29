@@ -5,6 +5,12 @@ description: 为 Fengye 研究股票、ETF、基金或投资组合、分析实�
 
 # Fengye 投资研究
 
+## 可直接执行的入口
+
+行情、日周线、ETF收益风险/相关性/持仓重叠：读 [references/market-workflow.md](references/market-workflow.md)，运行 `scripts/market_research.py` 的 `fetch`、`prepare-actions`、`analyze` 或 `holdings`。它输出快照、事件草稿、逐日账本、指标JSON与研究报告；不能用未审读的公司行为算总回报。
+
+个股财务、股息及基础估值：读 [references/equity-research.md](references/equity-research.md)，运行 `scripts/equity_research.py snapshot` 保存AKShare原始表，人工核验单位、期间及公开日后再用 `analyze` 计算PE、PB、历史分配率与适用行业的FCF覆盖。示例输入见 `examples/equity-input-example.json`，不得当实际行情；脚本不假装实现DCF或自动选股。
+
 ## 先了解问题与现状
 
 先按市场核验代码格式和产品身份（中国内地股票/场内ETF通常为六位代码），明确投资目的、期限、风险承受能力与决策范围；不把缺失信息编成事实。涉及个人持仓或计划时，先读 `/Users/fengye/workspace/investment/AGENTS.md`、README 和其中所指向的最新持仓、决策及策略；注意文件时间，旧计划不等于成交。用户指定的数据源与当次指令优先。研究、建议、用户确认和成交分开记录；本技能不授权交易。

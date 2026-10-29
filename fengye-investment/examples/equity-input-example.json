@@ -1,0 +1,68 @@
+{
+  "symbol": "示例000000",
+  "as_of": "2026-10-28",
+  "market": "虚构",
+  "industry": "非金融",
+  "sources": [
+    "虚构数据，仅用于说明计算；不是行情或投资建议"
+  ],
+  "dividend_window_verified": true,
+  "inputs": {
+    "price": {
+      "value": 20,
+      "unit": "元/股",
+      "date": "2026-10-28",
+      "source": "虚构收盘价"
+    },
+    "eps_ttm": {
+      "value": 2,
+      "unit": "元/股",
+      "date": "2026-09-30",
+      "source": "虚构已披露TTM每股收益",
+      "disclosed_at": "2026-10-27"
+    },
+    "book_value_per_share": {
+      "value": 10,
+      "unit": "元/股",
+      "date": "2026-09-30",
+      "source": "虚构已披露每股净资产",
+      "disclosed_at": "2026-10-27"
+    },
+    "dividend_per_share_ttm": {
+      "value": 0.8,
+      "unit": "元/股",
+      "date": "2026-10-28",
+      "source": "虚构过去12个月已实施税前现金分红"
+    },
+    "operating_cash_flow": {
+      "value": 120000000,
+      "unit": "元",
+      "date": "2026-09-30",
+      "source": "虚构TTM现金流量表",
+      "disclosed_at": "2026-10-27",
+      "period_start": "2025-10-01",
+      "period_end": "2026-09-30",
+      "basis": "TTM"
+    },
+    "capital_expenditure": {
+      "value": 40000000,
+      "unit": "元",
+      "date": "2026-09-30",
+      "source": "虚构TTM资本支出",
+      "disclosed_at": "2026-10-27",
+      "period_start": "2025-10-01",
+      "period_end": "2026-09-30",
+      "basis": "TTM"
+    },
+    "cash_dividends_paid": {
+      "value": 50000000,
+      "unit": "元",
+      "date": "2026-09-30",
+      "source": "虚构TTM实际现金股利",
+      "disclosed_at": "2026-10-27",
+      "period_start": "2025-10-01",
+      "period_end": "2026-09-30",
+      "basis": "TTM"
+    }
+  }
+}
