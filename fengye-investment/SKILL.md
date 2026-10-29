@@ -9,6 +9,10 @@ description: 为 Fengye 研究股票、ETF、基金或投资组合、分析实�
 
 行情、日周线、ETF收益风险/相关性/持仓重叠：读 [references/market-workflow.md](references/market-workflow.md)，运行 `scripts/market_research.py` 的 `fetch`、`prepare-actions`、`analyze` 或 `holdings`。它输出快照、事件草稿、逐日账本、指标JSON与研究报告；不能用未审读的公司行为算总回报。
 
+ETF历史流动性、订单规模和价差/佣金参考：读 [references/etf-liquidity.md](references/etf-liquidity.md)，运行 `scripts/etf_liquidity.py`。明确金额单位，区分零成交、停牌和缺失；日成交额不保证盘口可成交。
+
+ETF历史/同类溢价、跨境证据、已有持仓固定换仓对照：读 [references/etf-extensions.md](references/etf-extensions.md)，运行 `scripts/etf_premium.py` 或 `scripts/etf_switch.py`。它们使用核验后的输入，不将滞后净值当实时估值，也不发送交易。
+
 个股财务、股息及基础估值：读 [references/equity-research.md](references/equity-research.md)，运行 `scripts/equity_research.py snapshot` 保存AKShare原始表，人工核验单位、期间及公开日后再用 `analyze` 计算PE、PB、历史分配率与适用行业的FCF覆盖。示例输入见 `examples/equity-input-example.json`，不得当实际行情；脚本不假装实现DCF或自动选股。
 
 ## 先了解问题与现状

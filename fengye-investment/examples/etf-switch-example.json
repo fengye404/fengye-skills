@@ -1,0 +1,70 @@
+{
+  "dates": [
+    "2026-01-05",
+    "2026-01-06",
+    "2026-01-07",
+    "2026-01-08"
+  ],
+  "price_source": "虚构示例，不是市场行情",
+  "price_adjustment": "raw",
+  "prices": {
+    "2026-01-05": {
+      "A": 10,
+      "B": 10
+    },
+    "2026-01-06": {
+      "A": 10,
+      "B": 10
+    },
+    "2026-01-07": {
+      "A": 9.9,
+      "B": 10
+    },
+    "2026-01-08": {
+      "A": 9.9,
+      "B": 10
+    }
+  },
+  "initial_shares": {
+    "A": 200,
+    "B": 0
+  },
+  "initial_cash": 1000,
+  "corporate_actions": {
+    "reviewed": true,
+    "source": "虚构示例",
+    "coverage_start": "2026-01-05",
+    "coverage_end": "2026-01-08",
+    "events": [
+      {
+        "type": "dividend",
+        "symbol": "A",
+        "record_date": "2026-01-06",
+        "ex_date": "2026-01-07",
+        "pay_date": "2026-01-08",
+        "cash_per_unit": 0.1
+      }
+    ]
+  },
+  "costs": {
+    "commission_rate": 0.0001,
+    "minimum_commission": 0,
+    "slippage_rate": 0,
+    "buy_lot": 100,
+    "price_tick": 0.001
+  },
+  "trades": [
+    {
+      "date": "2026-01-06",
+      "symbol": "A",
+      "side": "sell",
+      "shares": 100
+    },
+    {
+      "date": "2026-01-06",
+      "symbol": "B",
+      "side": "buy",
+      "shares": 100
+    }
+  ]
+}
