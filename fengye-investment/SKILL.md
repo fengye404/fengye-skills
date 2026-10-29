@@ -11,6 +11,8 @@ description: 为 Fengye 研究股票、ETF、基金或投资组合、分析实�
 
 ## 数据与证据
 
+遇到实时取数失败、复权/分红/拆分或财务日期对齐问题时，读 [references/local-data.md](references/local-data.md)，复用本地已验证的恢复办法和验收规则。
+
 - 推荐股票、ETF或分析走势时，使用 AKShare 核验实际行情，优先使用投资工作区现有 `.venv` 与脚本。记录接口、获取时刻和行情日期、市场时区、价格口径、复权、样本范围及失败信息，保存可复核快照。查不到就标明，不用旧数据冒充实时数据。补充基金公告、财报或指数编制资料时链接原始来源。
 - 先验证代码、名称、币种、数据完整性、异常点与交易日对齐；识别产品类型，区分财报期、公告日和查询时间。区分成交价、净值和实时参考净值 IOPV；日终净值与盘中价格不能当同期实时溢价。空接口不证明没有分红；校核分红和拆分。实际往返成本按买卖报价、佣金和滑点计算，不机械套用两倍完整价差。内外盘是成交分类，不是未来涨跌证据。
 - 用户要实时分析时，记录实际报价时间、最新价、当日高低、成交量额、买卖价差、IOPV及有效性；不可用就逐项说明。跨境ETF留意底层市场交易时差、汇率及估值延迟。溢价和价差是执行成本参考，不是单独的买入信号。
@@ -21,6 +23,8 @@ description: 为 Fengye 研究股票、ETF、基金或投资组合、分析实�
 
 个股研究结合业务、财务报表、盈利和现金流、负债、分红可持续性、行业周期与竞争，核验PE的TTM或其他口径以及PB等与同行的可比性；低PE或高股息不是安全边际的证明。比较总回报、现金到账与风险，不把历史派息推成未来承诺。
 
+深入筛选高息个股、分析财报或估值时，读 [references/equity-research.md](references/equity-research.md)，使用适合行业的方法，并把新证据与原判断对照。
+
 技术分析按任务检查日/周K线、均线方向、量价、支撑阻力与失效条件，说明观察窗口和价格口径。结构描述是条件判断，不是预测；不编造情景概率或把支撑当保证。重大投资判断结合基本面、估值与风险，不仅依靠形态。
 
 策略和回测的具体规范见 [references/backtesting.md](references/backtesting.md)。优先回答用户实际决策：给出维持、调整或暂缓及原因；若条件不足，列出缺失数据和改变结论的条件。明确计算时点、仓位和预算；未经验证的门槛标成假设。
@@ -30,5 +34,7 @@ description: 为 Fengye 研究股票、ETF、基金或投资组合、分析实�
 将实际研究和方向调整以中文摘要写入私人投资工作区的现有 `research/`、`decisions/`、`strategies/` 和 `reports/`，遵循其 AGENTS.md，保留旧记录及来源。每条记录包括问题、截至时间、已核实事实、方法、结论、风险与失效条件、未解决项、证据和相关笔记链接；决策注明建议、用户确认或实际执行状态。维护一个清晰的 Markdown 索引，兼容 Obsidian，但不要复制敏感账户信息到公开仓库。不要擅自重排、删除历史或把对话原文充作总结。
 
 ## 方法来源与边界
+
+模块与上游具体方法的逐项对照、适配及舍弃原因见 [references/upstream-methods.md](references/upstream-methods.md)。维护或深化技能时按此查阅原文，而非只保留仓库链接。
 
 借鉴 [backtest-expert](https://github.com/tradermonty/claude-trading-skills/blob/main/skills/backtest-expert/SKILL.md) 的规则先行、样本外和压力测试；借鉴 [technical-analyst](https://github.com/tradermonty/claude-trading-skills/blob/main/skills/technical-analyst/SKILL.md) 的趋势、量价与失效条件，但不套用其纯周线图片或未经校验的概率。借鉴 [etf-premium](https://github.com/himself65/finance-skills/blob/main/plugins/market-analysis/skills/etf-premium/SKILL.md) 对折溢价和流动性的拆解；其 Yahoo 默认和昨收回退不适合直接当A股实时数据。项目星数、模型角色和技能本身均不是有效性的证明。
