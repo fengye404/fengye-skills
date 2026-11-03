@@ -58,6 +58,12 @@ For an authorized change:
 
 Operational invariants in the runbooks remain binding, especially avoiding duplicate Raft Computer identities, keeping proxy/controller ports loopback-only, preserving remote-access and DNS recovery paths, and never treating a successful configuration write or deployment as proof that restart, rollback, and public reachability work.
 
+## macOS maintenance with Mole
+
+When inspecting disk usage or performing requested Mac maintenance, check whether `mo` (Mole) is installed and use it where appropriate. On Fengye’s Mac Studio it is installed via Homebrew; verify locally rather than assuming it exists on other machines. `mo --version` and `mo --help` show the installed version and supported commands; `mo analyze` and `mo status` provide interactive disk and health views.
+
+For cleanup, uninstall, project artifact purge, installer removal, app slimming, or system optimization, start with the relevant `mo <command> --dry-run` and review the exact scope, protected paths, and impact. `mo clean` may empty the user Trash, and clean/purge/installer can permanently delete files. Act only within the user’s requested scope, preserve unrelated files and services, and do not run broad cleanup, app removal, privilege changes, or optimization merely because Mole is installed. Consult the current upstream documentation for version-specific behavior; update Homebrew installations with Homebrew. Record durable installation or operational changes in the private runbook.
+
 ## Required Documentation Sync
 
 When a task produces durable personal-infrastructure information, update the runbook repository before finishing. This includes:
