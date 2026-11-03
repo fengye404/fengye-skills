@@ -58,6 +58,16 @@ For an authorized change:
 
 Operational invariants in the runbooks remain binding, especially avoiding duplicate Raft Computer identities, keeping proxy/controller ports loopback-only, preserving remote-access and DNS recovery paths, and never treating a successful configuration write or deployment as proof that restart, rollback, and public reachability work.
 
+## Upgrading the System Running the Agent
+
+When an Agent upgrades its own host platform (for example, a Raft Agent upgrading Raft Server or Computer), treat loss of the executing Agent as an expected failure mode. An upgrade request includes necessary recovery preparation and post-upgrade verification; do not rely on a follow-up chat through the system being replaced.
+
+- Before disrupting service, verify an independent remote recovery entry that remains usable without that platform, especially when the user is away. A second Agent on the same platform is not independent recovery. If no usable recovery route exists, prepare one within authorized scope or explain the blocker before proceeding.
+- Preserve identities, sessions, data, previous binaries/images and service definitions. Inspect the effective service/runner environment, not just an interactive shell: executable paths, runtime capability probes, credentials mechanism and proxy settings. Validate the replacement through the actual service launch path; desktop application bundles may move their embedded CLI.
+- Hand off disruptive steps to a bounded host-level process independent of the Agent session. Before cutover, prepare and verify its recovery commands, timeout, logs and failure notification. Restore known-good launch configuration/binaries on failed acceptance only when compatible; never automatically roll back a migrated database or overwrite newer user data. Do not create competing daemons or endless restart loops.
+- Acceptance must cover server health, original Computer identity and connection, runtime discovery, and an authorized isolated Agent execution. A green doctor, connected Computer or database active flag alone does not prove Agent availability. Preserve intentionally stopped/deleted Agents; do not send unsolicited messages to real chats for testing.
+- Record the recovery entry, acceptance results and remaining gaps in the system runbook. Clearly distinguish a documented recovery plan from an implemented and tested mechanism; never claim automatic recovery exists merely because this rule was added.
+
 ## macOS maintenance with Mole
 
 When inspecting disk usage or performing requested Mac maintenance, check whether `mo` (Mole) is installed and use it where appropriate. On Fengye’s Mac Studio it is installed via Homebrew; verify locally rather than assuming it exists on other machines. `mo --version` and `mo --help` show the installed version and supported commands; `mo analyze` and `mo status` provide interactive disk and health views.
