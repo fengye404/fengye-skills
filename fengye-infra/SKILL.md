@@ -74,6 +74,10 @@ When inspecting disk usage or performing requested Mac maintenance, check whethe
 
 For cleanup, uninstall, project artifact purge, installer removal, app slimming, or system optimization, start with the relevant `mo <command> --dry-run` and review the exact scope, protected paths, and impact. `mo clean` may empty the user Trash, and clean/purge/installer can permanently delete files. Act only within the user’s requested scope, preserve unrelated files and services, and do not run broad cleanup, app removal, privilege changes, or optimization merely because Mole is installed. Consult the current upstream documentation for version-specific behavior; update Homebrew installations with Homebrew. Record durable installation or operational changes in the private runbook.
 
+## Proxy Usage
+
+Keep large-file downloads off Fengye's metered Clash proxy unless the user explicitly authorizes its use. Prefer direct access or a trustworthy download mirror, verifying the final redirect/CDN route and file integrity where available. Do not silently fall back to the paid proxy when direct access fails. Apply routing changes narrowly so normal proxied services remain available; keep machine-specific configuration in the network runbook.
+
 ## Required Documentation Sync
 
 When a task produces durable personal-infrastructure information, update the runbook repository before finishing. This includes:
